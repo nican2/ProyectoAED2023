@@ -1,0 +1,102 @@
+---
+title: "proyecto_jesus"
+author: "jemarle"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(stringr)
+```
+
+```{r}
+start_time <- Sys.time()
+
+ruta_archivo <- "./data/MicrodatosCP_NV_per_nacional_3VAR.txt"
+lines <- readLines(ruta_archivo)
+
+set.seed(33)
+
+conjunto_aleatorio <- sample(lines, 10000)
+
+```
+
+```{r}
+library(readxl)
+excel_info <- read_excel("data/Personas detallado_WEB.xls", sheet = "Hoja1", range = "C7:F80", col_names = FALSE)
+names(excel_info) <- c("Nombre", "Longitud", "Inicio", "Fin")
+```
+
+```{r}
+
+# Function to extract substrings from a string line and create a dataframe
+extract_substrings_to_dataframe <- function(line, start_positions, end_positions, names_list) {
+  substrings <- character(length(start_positions))
+  
+  for (i in seq_along(start_positions)) {
+    start <- start_positions[i]
+    end <- end_positions[i]
+    substrings[i] <- substr(line, start, end)
+  }
+  
+  # Create a list of named vectors
+  named_vectors <- vector("list", length(substrings))
+  names(named_vectors) <- names_list
+  for (i in seq_along(substrings)) {
+    named_vectors[[i]] <- substrings[i]
+  }
+  
+  # Convert the list to a dataframe
+  df <- as.data.frame(named_vectors)
+  
+  return(df)
+}
+
+df <- data.frame()
+
+```
+
+
+```{r}
+library(dplyr)
+
+# Start measuring time
+improved_time <- system.time({
+  result_list <- lapply(conjunto_aleatorio, function(line) {
+    extract_substrings_to_dataframe(line, excel_info$Inicio, excel_info$Fin, excel_info$Nombre)
+  })
+
+  df <- dplyr::bind_rows(result_list)
+})
+
+```
+
+```{r}
+library(stringr)
+
+# Replace values containing spaces with NA in the entire dataframe
+
+df <- df %>% mutate_all(~ ifelse(str_detect(string = ., pattern =  " "), NA, .)) # con esto cojo cuando hay uno o más espacios; cambio si detecta uno a NA
+```
+
+```{r}
+provincias <- read.delim("./data/provincias.txt", header = FALSE)
+colnames(provincias) <- c("Numeros", "Nombres"
+                          )
+provincias <- provincias %>%
+  arrange(as.numeric(Numeros))
+
+df <- df %>% 
+  arrange(as.numeric(CPRO)) %>%
+  mutate(CPRO = factor(CPRO, levels = unique(df$CPRO), labels = provincias$Nombres)) %>%
+  mutate(SEXO = factor(SEXO, levels = c(1, 6), labels = c("Hombre", "Mujer")))
+  
+                               
+```
+
+
+
