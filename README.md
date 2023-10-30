@@ -19,5 +19,7 @@ Actualmente el proyecto está en desarrollo.
 
 ## Notas de interés (para los participantes) [Luego esto se borrará]:
 
-El dataset que escojamos es recomendable que tenga datos faltantes (o similar) para que pueda verse un preprocesado de datos en el trabajo.  
+El dataset que escojamos es recomendable que tenga datos faltantes (o similar) para que pueda verse un preprocesado de datos en el trabajo.  En este caso el dataset será de la fuente del Instituto Nacional de Estadistica  
+
+
 Es muy importante hacer comentarios oportunos a todo lo realizado y se debe incorporar en la lectura de la memoria las cosas que se consideren relevantes (10 páginas máximo de extensión). {Recordar opciones de chunks en R}
