@@ -235,6 +235,10 @@ addhighlights: |
 
 ```
 
+```{r}
+print("prueba en rama")
+```
+
 
 \startlandscape
 ```{r, mdpinames, echo=FALSE, results='asis'}
