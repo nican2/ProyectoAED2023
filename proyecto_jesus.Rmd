@@ -27,7 +27,7 @@ conjunto_aleatorio <- sample(lines, 10000)
 
 ```{r}
 library(readxl)
-excel_info <- read_excel("data/Personas detallado_WEB.xls", sheet = "Hoja1", range = "C7:F80", col_names = FALSE)
+excel_info <- read_excel("data/Personas detallado_WEB.xls", sheet = "Hoja1", range = "C7:F148", col_names = FALSE)
 names(excel_info) <- c("Nombre", "Longitud", "Inicio", "Fin")
 ```
 
@@ -96,6 +96,10 @@ df <- df %>%
   mutate(SEXO = factor(SEXO, levels = c(1, 6), labels = c("Hombre", "Mujer")))
   
                                
+```
+
+```{r}
+head(df)
 ```
 
 
