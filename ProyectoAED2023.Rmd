@@ -441,3 +441,115 @@ discussion is unusually long or complex.
 
 This section is not mandatory, but may be added if there are patents resulting
 from the work reported in this manuscript.
+
+# CÓDIGO JESÚS
+
+```{r}
+library(stringr)
+library(readxl)
+library(readr)
+library(tidyr)
+library(dplyr)
+library(visdat)
+```
+
+```{r}
+ruta_txt <- "./data/md_ECEPOVadultos_2021.txt"
+lines <- readLines(ruta_txt)
+
+#set.seed(33)
+#conjunto_aleatorio <- sample(lines, 10000)
+```
+
+```{r}
+ruta_excel <- "data/dr_ECEPOVadultos_2021.xlsx"
+excel_info <- read_excel(ruta_excel, sheet = "Diseño", range = "A2:H50", col_names = TRUE)
+Tablas1 <- read_excel(ruta_excel, sheet = "Tablas1", range = "A4:C63", col_names = TRUE)
+Tablas2 <- read_excel(ruta_excel, sheet = "Tablas2", range = "A4:C112", col_names = TRUE)
+Tablas3 <- read_excel(ruta_excel, sheet = "Tablas3", range = "A4:C48", col_names = TRUE)
+```
+
+```{r}
+# Función para sacar las subcadenas en cada línea
+
+extract_substrings <- function(line, start_position, length) {
+  substrings <- character(length(start_position))
+  
+  for (i in seq_along(start_position)) {
+    start <- start_position[i]
+    end <- start + length[i] - 1
+    substrings[i] <- substr(line, start, end)
+  }
+  
+  return(substrings)
+}
+
+# Guardaremos las substrings en una matriz por eficiencia computacional
+
+num_lines <- length(lines)
+num_variables <- length(excel_info$Variable)
+substring_matrix <- matrix("", nrow = num_lines, ncol = num_variables)
+
+# Extraer las subcadenas para todas las líneas y guardarlas en las filas de la matriz
+
+for (i in 1:num_lines) {
+  substring_matrix[i, ] <- extract_substrings(lines[i], excel_info$Posición, excel_info$Longitud)
+}
+
+# Conversión al dataframe desde la matriz
+
+df <- as.data.frame(substring_matrix)
+colnames(df) <- excel_info$Variable
+
+```
+
+```{r}
+# Cambio manual por datos mal introducidos "2 " --> "2" para la posterior lectura con el diccionario
+
+manual_change <- c("ESTUDIOS", "CAMPO", "NDESPLA", "MTRANSPOR_1", "MTRANSPOR_2")
+
+df <- df %>%
+  mutate(across(all_of(manual_change), ~ str_remove_all(., " ")))
+
+# Conversión de las variables correspondientes a tipo numérico
+
+dic_tipo <- excel_info$Tipo
+
+df <- df %>%
+  mutate(across(which(dic_tipo == "N"), as.numeric)) %>%
+  mutate()
+
+# Transformación a factores de las variables pertinentes
+
+excel_dic <- excel_info %>%
+  filter(!is.na(`Diccionario de la variable`))
+
+dic_vars <- excel_dic$Variable
+dic_var <- excel_dic$`Diccionario de la variable`
+dic_table <- excel_dic$`Diccionario ubicado en la hoja…`
+
+for (i in seq_along(dic_vars)) {
+  
+  dataframe_name <- dic_table[i]  
+  df_table <- get(dataframe_name)
+  positions <- which(df_table == dic_var[i], arr.ind = TRUE) # obtener posición donde se encuentra la palabra del diccionario 
+  
+  if (length(positions) > 0) {
+    
+    fila_start <- positions[1]
+    columna_start <- positions[2]
+    
+    fila_end <- min(which(is.na(df_table[(fila_start + 2):nrow(df_table), columna_start]), arr.ind = TRUE)[1]) + fila_start
+
+    levels <- df_table[(fila_start + 2):fila_end, columna_start]
+    labels <- df_table[(fila_start + 2):fila_end, columna_start + 1]
+    
+    levels <- unlist(levels[[1]])
+    labels <- unlist(labels[[1]])
+  }
+  
+  df <- df %>%
+      mutate_at(vars(dic_vars[i]), ~factor(., levels = levels, labels = labels))
+}
+
+```
