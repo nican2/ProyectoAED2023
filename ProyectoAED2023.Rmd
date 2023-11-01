@@ -371,6 +371,7 @@ library(readr)
 library(tidyr)
 library(dplyr)
 library(visdat)
+library(ggplot2)
 ```
 
 ```{r}
@@ -476,14 +477,14 @@ for (i in seq_along(dic_vars)) {
 
 ### Características generales
 
-Una vez realizado el tratamiento de las variables por tipos, se pasa a obtener las características generales del conjunto de datos previo a la visualización de los mismos.
+Una vez realizado la carga de los datos, se pasa a realizar una pequeña visualización previa antes del comienzo del análisis, para ello haciendo uso de la función `glimpse`.
 
-
-Se tiene que el numero de instancias es de 361934 y el de atributos de 48. Además el tipo de los datos y sus primeros valores para cada atributo se observa de la siguiente forma
 ```{r}
 glimpse(df)
 ```
 
+
+Se tiene que el numero de instancias es de 361934 y el de atributos de 48. Además el tipo de los datos y sus primeros valores para cada atributo se observa de la siguiente forma
 
 
 ```{r}
@@ -493,6 +494,26 @@ summary(df)
 
 
 # Analisis univariante
+Una vez realiazda la carga de los datos, se pasa a explorar cada una de las variables de forma individual para estudiar las distribuciones de los datos y valorar la aplicación de castings no planteados en la carga.
+
+
+Cabe destacar que representación por cada una de las variables se realiza atendiendo a su tipo. En este caso dado que se tienen 3 tipos de variables, numericas, strings y categóricas( representadas por un factor) el estudio se divide en tres partes
+
+#### Variables de tipo string
+```{r}
+col_string <-colnames(df[sapply(df, is.character)])
+print(paste("Las variables de tipo caracter son:",paste(col_string, collapse=", ")))
+```
+
+*   Variable IDEN
+
+```{r}
+
+```
+
+
+
+
 
 
 # Analisis multivariante
