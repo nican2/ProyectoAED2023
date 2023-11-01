@@ -12,8 +12,9 @@ type: article
 
 # front matter
 simplesummary: |
-  A Simple summary goes here.
+  En este proyecto de Análisis Exploratorio de Datos se explora un conjunto de datos real con el fin de obtener valiosas perspectivas y conclusiones.
 abstract: |
+  
   A single paragraph of about 200 words maximum. For research articles, 
   abstracts should give a pertinent overview of the work. We strongly encourage
   authors to use the following style of structured abstracts, but without 
@@ -27,23 +28,11 @@ abstract: |
   
 # back matter
 keywords: |
-  keyword 1; keyword 2; keyword 3 (list three to ten pertinent keywords specific 
-  to the article, yet reasonably common within the subject discipline.).
+  Análisis exploratorio de datos; Patrones en datos; Encuesta de población; Limpieza de datos
 acknowledgement: |
-  All sources of funding of the study should be disclosed. Please clearly 
-  indicate grants that you have received in support of your research work. 
-  Clearly state if you received funds for covering the costs to publish in open 
-  access.
+  Es necesario mostrar nuestro agradecimiento a ValgrAI por el apoyo en el pago de la matrícula para el Máster en Ciencia de Datos (UV). Además, no nos podemos olvidar del profesorado que nos permitirá formarnos en este ámbito.
 authorcontributions: |
-  For research articles with several authors, a short paragraph specifying their 
-  individual contributions must be provided. The following statements should be 
-  used ``X.X. and Y.Y. conceive and designed the experiments; X.X. performed the 
-  experiments; X.X. and Y.Y. analyzed the data; W.W. contributed 
-  reagents/materials/analysis tools; Y.Y. wrote the paper.'' Authorship must be
-  limited to those who have contributed substantially to the work reported.
-supplementary: |
- The following supporting information can be downloaded at:  
- \linksupplementary{s1}, Figure S1: title; Table S1: title; Video S1: title.
+  Aquí tenemos que poner más o menos lo que ha participado cada uno.
 abbreviations:
   - short: AED
     long: Análisis Exploratorio de Datos
@@ -54,29 +43,37 @@ endnotes: false
 output: 
   rticles::mdpi_article:
     extra_dependencies: longtable
-  :html_document:
 ---
 
+# Introducción.
+
+El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nacional de Estadística (INE). En concreto, pertenece a una encuesta realizada a la población en el año 2021 que tiene como propósito el proporcionar información detallada sobre personas, viviendas y edificios que no puede obtenerse a través de registros administrativos. En nuestro caso, hemos decidido hacer la exploración de una parte de esta, relacionada con cuestiones que se les hizo a los adultos (personas de 16 años o más) en las viviendas aleatoriamente seleccionadas. Esta puede obtenerse pinchando en el siguiente enlace:  [Encuesta](https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177092&menu=resultados&idp=1254735572981#!tabs-1254736195790).
+
+## Carga de librerías y datos necesarios para el análisis
+
 ```{r setup, cache = F, echo = F, message = F, warning = F, tidy = F}
-# Configuración general
-library(pacman)
+# Configuración general de chunks
 library(knitr)
 options(width = 100)
 knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = T, cache.path = '.cache/', fig.path = './figure/', include = F)
 ```
 
+Como es habitual, cargamos las librerías que necesitamos al inicio del documento.
+
 ```{r librerias, message = T, include = T, echo = T}
 # Carga de librerías necesarias con pacman
+library(pacman)
 pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats)
 ```
 
+Pasamos ahora a hacer la carga del conjunto de datos, presentado en .txt en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*.
 
 ```{r}
 ruta_txt <- "./data/md_ECEPOVadultos_2021.txt"
 lines <- readLines(ruta_txt)
 
 set.seed(33)
-lines <- sample(lines, 10000)
+lines <- sample(lines, 10000) # si se desea carga rápida (quitar luego)
 ```
 
 ```{r}
