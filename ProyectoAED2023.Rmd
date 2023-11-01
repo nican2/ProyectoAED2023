@@ -512,6 +512,13 @@ print(paste("El numero de columnas con NA de tipo factor es de ",sum(col_factor_
 print(paste("El numero de columnas con NA de tipo numerico es de ",sum(col_numeric_na)))
 print(paste("El numero de columnas con NA de tipo caracter es de ",sum(col_char_na)))
 
+print(paste("Las columnas con NA de tipo factor son las siguientes"))
+print(colnames(df)[col_factor_na])
+
+print(paste("Las columnas con NA de tipo numerico son las siguientes"))
+print(colnames(df)[col_numeric_na])
+
+
 
 ```
 
