@@ -473,3 +473,47 @@ for (i in seq_along(dic_vars)) {
 }
 
 ```
+
+### Características generales
+
+Una vez realizado el tratamiento de las variables por tipos, se pasa a obtener las características generales del conjunto de datos previo a la visualización de los mismos.
+
+
+Se tiene que el numero de instancias es de 361934 y el de atributos de 48. Además el tipo de los datos y sus primeros valores para cada atributo se observa de la siguiente forma
+```{r}
+glimpse(df)
+```
+
+
+
+```{r}
+summary(df)
+```
+
+
+
+# Analisis univariante
+
+
+# Analisis multivariante
+
+
+# Detección de anomalias
+En esta sección, se eliminan valores NA y se tratan los outliers. En primer lugar, se visualiza donde se encuentran los valores faltantes
+
+```{r}
+col_na <- sapply(df, function(x) any(is.na(x)))
+
+col_factor_na <- col_na & sapply(df, is.factor)
+col_numeric_na <-col_na & sapply(df, is.numeric)
+col_char_na <- col_na & sapply(df, is.character)
+
+print(paste("El numero de columnas con NA de tipo factor es de ",sum(col_factor_na)))
+print(paste("El numero de columnas con NA de tipo numerico es de ",sum(col_numeric_na)))
+print(paste("El numero de columnas con NA de tipo caracter es de ",sum(col_char_na)))
+
+
+```
+
+
+
