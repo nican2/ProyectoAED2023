@@ -480,6 +480,7 @@ Una vez realizado el tratamiento de las variables por tipos, se pasa a obtener l
 
 
 Se tiene que el numero de instancias es de 361934 y el de atributos de 48. Además el tipo de los datos y sus primeros valores para cada atributo se observa de la siguiente forma
+
 ```{r}
 glimpse(df)
 ```
@@ -493,6 +494,9 @@ summary(df)
 
 
 # Analisis univariante
+```{r}
+# Prueba
+```
 
 
 # Analisis multivariante
