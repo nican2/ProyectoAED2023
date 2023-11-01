@@ -436,3 +436,59 @@ discussion is unusually long or complex.
 
 This section is not mandatory, but may be added if there are patents resulting
 from the work reported in this manuscript.
+
+
+
+# En primer lugar se realiza la carga de los datos
+
+
+```{r}
+
+datosPersonas <- read_delim("data/datosPersonas.csv", 
+     delim = "\t", escape_double = FALSE, 
+     col_types = cols(IDQ_MUN = col_character()), 
+     trim_ws = TRUE)
+
+head(datosPersonas)
+
+```
+
+Se explora la cantidad de datos presentes
+```{r}
+
+dim(datosPersonas)
+
+```
+
+Ahora, para obtener la informacion del significado de las columnas y el significado de datos ausentes o el rango de valores a tomar por variable de forma automatizada, se carga el fichero excel que contiene la info deseada. En primer lugar se carga el dicciorario principal:
+
+```{r}
+library(readxl)
+dicPrincipal <- read_excel("data/diccionarioDatos.xlsx", skip = 1)
+
+
+```
+
+
+
+```{r}
+dicSec1 <- read_excel("data/diccionarioDatos.xlsx",  sheet = "Tablas1", skip = 3)
+```
+
+
+```{r}
+dicSec2 <- read_excel("data/diccionarioDatos.xlsx", 
+    sheet = "Tablas2", skip = 2)
+```
+
+```{r}
+dicSec3 <- read_excel("data/diccionarioDatos.xlsx", 
+    sheet = "Tablas3", skip = 2)
+```
+
+
+
+
+
+
+
