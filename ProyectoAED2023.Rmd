@@ -54,7 +54,6 @@ endnotes: false
 output: 
   rticles::mdpi_article:
     extra_dependencies: longtable
-  :html_document:
 ---
 
 # Version
