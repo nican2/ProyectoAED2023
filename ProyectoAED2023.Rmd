@@ -66,9 +66,9 @@ library(pacman)
 pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats)
 ```
 
-Pasamos ahora a hacer la carga del conjunto de datos, presentado en .txt en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*.
+Pasamos ahora a hacer la carga del conjunto de datos, presentado en .txt en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*. Este fichero nos será especialmente útil puesto que permitirá una automatización para convertir nuestra *Raw data* a *Technically correct data*, teniendo cada variable su tipo correcto.
 
-```{r}
+```{r lectura_dataset}
 ruta_txt <- "./data/md_ECEPOVadultos_2021.txt"
 lines <- readLines(ruta_txt)
 
@@ -76,16 +76,18 @@ set.seed(33)
 lines <- sample(lines, 10000) # si se desea carga rápida (quitar luego)
 ```
 
-```{r}
+```{r lectura_diseno}
 ruta_excel <- "data/dr_ECEPOVadultos_2021.xlsx"
 excel_info <- read_excel(ruta_excel, sheet = "Diseño", range = "A2:H50", col_names = TRUE)
+
+# Almacenamiento de distintas hojas del excel para optimizar el código
 Tablas1 <- read_excel(ruta_excel, sheet = "Tablas1", range = "A4:C63", col_names = TRUE)
 Tablas2 <- read_excel(ruta_excel, sheet = "Tablas2", range = "A4:C112", col_names = TRUE)
 Tablas3 <- read_excel(ruta_excel, sheet = "Tablas3", range = "A4:C48", col_names = TRUE)
 ```
 
-```{r}
-# Función para sacar las subcadenas en cada línea
+```{r extraccion_dataset}
+# Función para sacar las subcadenas en cada línea del .txt
 
 extract_substrings <- function(line, start_position, length) {
   substrings <- character(length(start_position))
@@ -118,7 +120,9 @@ colnames(df) <- excel_info$Variable
 
 ```
 
-```{r}
+A pesar de que fue de gran utilidad el fichero que ofrecía INE para la transformación de las variables a un tipo correcto, aparecieron algunos fallos que tuvimos que solventar de manera manual. Determinadas variables no fueron bien codificadas por parte de INE, de tal forma que hubo que modificar ligeramente el fichero .xlsx. Concretamente, fue en algunos *diccionarios* de variables en los que no terminaba de estar correctamente bien determinado el *código* (lo que sería el level en un factor). El error presentado (en algunas variables) consistía, básicamente, en que aparecía "01" en lugar de "1" (para otros números similar), valor recogido en las observaciones.
+
+```{r conversion_dataset}
 # Cambio manual por datos mal introducidos "2 " --> "2" para la posterior lectura con el diccionario
 
 manual_change <- c("ESTUDIOS", "CAMPO", "NDESPLA", "MTRANSPOR_1", "MTRANSPOR_2")
@@ -166,7 +170,6 @@ for (i in seq_along(dic_vars)) {
   df <- df %>%
       mutate_at(vars(dic_vars[i]), ~factor(., levels = levels, labels = labels))
 }
-
 ```
 
 # Version
