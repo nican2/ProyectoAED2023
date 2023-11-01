@@ -501,6 +501,7 @@ for (i in 1:num_lines) {
 df <- as.data.frame(substring_matrix)
 colnames(df) <- excel_info$Variable
 
+head(df)
 ```
 
 ```{r}
@@ -552,4 +553,15 @@ for (i in seq_along(dic_vars)) {
       mutate_at(vars(dic_vars[i]), ~factor(., levels = levels, labels = labels))
 }
 
+head(df)
+
 ```
+
+# Analisis exploratorio univariado
+El estudio univariante se realiza atendiendo al tipo de variable
+
+```{r}
+vapply(df,class)
+
+```
+
