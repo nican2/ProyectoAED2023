@@ -47,7 +47,7 @@ output:
 
 # Introducción.
 
-El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nacional de Estadística (INE). En concreto, pertenece a una encuesta realizada a la población en el año 2021 que tiene como propósito el proporcionar información detallada sobre personas, viviendas y edificios que no puede obtenerse a través de registros administrativos. En nuestro caso, hemos decidido hacer la exploración de una parte de esta, relacionada con cuestiones que se les hizo a los adultos (personas de 16 años o más) en las viviendas aleatoriamente seleccionadas. Esta puede obtenerse pinchando en el siguiente enlace:  [Encuesta](https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177092&menu=resultados&idp=1254735572981#!tabs-1254736195790).
+El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nacional de Estadística (INE). En concreto, pertenece a una encuesta realizada a la población en el año 2021 que tiene como propósito el proporcionar información detallada sobre personas, viviendas y edificios que no puede obtenerse a través de registros administrativos. En nuestro caso, hemos decidido hacer la exploración de una parte de esta, relacionada con cuestiones que se les hizo a los adultos (personas de 16 años o más) en las viviendas aleatoriamente seleccionadas. Esta está disponible  [aquí](https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177092&menu=resultados&idp=1254735572981#!tabs-1254736195790).
 
 ## Carga de librerías y datos necesarios para el análisis
 
@@ -55,7 +55,7 @@ El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nac
 # Configuración general de chunks
 library(knitr)
 options(width = 100)
-knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = T, cache.path = '.cache/', fig.path = './figure/', include = F)
+knitr::opts_chunk$set(echo = T, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = T, cache.path = '.cache/', fig.path = './figure/', include = T)
 ```
 
 Como es habitual, cargamos las librerías que necesitamos al inicio del documento.
@@ -73,7 +73,7 @@ ruta_txt <- "./data/md_ECEPOVadultos_2021.txt"
 lines <- readLines(ruta_txt)
 
 set.seed(33)
-lines <- sample(lines, 10000) # si se desea carga rápida (quitar luego)
+lines <- sample(lines, 40000) # si se desea carga rápida (quitar luego)
 ```
 
 ```{r lectura_diseno}
@@ -130,7 +130,7 @@ manual_change <- c("ESTUDIOS", "CAMPO", "NDESPLA", "MTRANSPOR_1", "MTRANSPOR_2")
 df <- df %>%
   mutate(across(all_of(manual_change), ~ str_remove_all(., " ")))
 
-# Conversión de las variables correspondientes a tipo numérico
+# Conversión de las variables correspondientes a tipo numérico según indica INE
 
 dic_tipo <- excel_info$Tipo
 
@@ -138,7 +138,7 @@ df <- df %>%
   mutate(across(which(dic_tipo == "N"), as.numeric)) %>%
   mutate()
 
-# Transformación a factores de las variables pertinentes
+# Transformación a factores de las variables pertinentes usando el fichero que ofrece INE
 
 excel_dic <- excel_info %>%
   filter(!is.na(`Diccionario de la variable`))
@@ -146,6 +146,8 @@ excel_dic <- excel_info %>%
 dic_vars <- excel_dic$Variable
 dic_var <- excel_dic$`Diccionario de la variable`
 dic_table <- excel_dic$`Diccionario ubicado en la hoja…`
+
+## bucle donde se irán convirtiendo a factor de manera iterativa aquellas variables que nos indique el fichero del INE
 
 for (i in seq_along(dic_vars)) {
   
@@ -163,49 +165,26 @@ for (i in seq_along(dic_vars)) {
     levels <- df_table[(fila_start + 2):fila_end, columna_start]
     labels <- df_table[(fila_start + 2):fila_end, columna_start + 1]
     
+    # conversión a tipo vector para aplicar debajo factor()
     levels <- unlist(levels[[1]])
     labels <- unlist(labels[[1]])
   }
   
   df <- df %>%
-      mutate_at(vars(dic_vars[i]), ~factor(., levels = levels, labels = labels))
+      mutate_at(vars(dic_vars[i]), ~factor(., levels = levels, labels = labels)) 
 }
 ```
 
-# Version
-
-This Rmd-skeleton uses the mdpi Latex template published 2023-03-25. 
-However, the official template gets more frequently updated than the **rticles**
-package. Therefore, please make sure prior to paper submission, that you're 
-using the most recent .cls, .tex and .bst files 
-(available [here](http://www.mdpi.com/authors/latex)).
-
-# Article Header Information
-
-The YAML header includes information needed mainly for formatting the front and 
-back matter of the article. Required elements include:
-
-```yaml
-title: Title of the paper
-author:
-  - name: first and last name
-    affil: |
-      One or more comma seperated numbers corresponding to affilitation
-      and one or more  comma seperated symbols corresponding 
-      optional notes.
-    orcid: optional orcid number
-affiliation:  
-  - num: 1,..., n for each affiliation
-    address: required
-    email: required
-authorcitation: |
-  Lastname, F.
-correspondence: |
-  email@email.com; Tel.: +XX-000-00-0000.
-journal: notspecified
-type: article
-status: submit
+```{r}
+df %>%
+  select(MTRANSPOR_1) %>%
+  filter(MTRANSPOR_1 == "Otros - andando")
 ```
+
+# Ideas de Jesús
+
+Univariante: distribución de provincia, estado civil, campos de estdios, situación laboral, medio de transporte usado para trabajo, dispone teléfono móvil, hijos
+
 
 Journal options are in Table \ref{tab:mdpinames}. The `status` variable should 
 generally not be changed by authors. The `type` variable describes 
@@ -224,57 +203,6 @@ knitr::kable(rticles::string_to_table(type, 3),
              caption = "MDPI article types.")
 ```
 
-## Journal Specific YAML variables
-
-```yaml
-# for journal Diversity,
-# add the Life Science Identifier using:
-lsid: http://zoobank.org/urn:lsid:zoobank.org:act:nnnn
-
-
-# for journal Applied Sciences
-# add featured application
-featuredapplication: |
-  Authors are encouraged to provide a concise 
-  description of the specific application or 
-  a potential application of the work. This 
-  section is not mandatory.
-
-# for the journal Data
-# add dataset doi and license
-dataset: https://doi.org/10.1000/182
-datasetlicense: CC-BY-4.0
-
-# for the journal Toxins
-# add key contributions
-keycontributions: |
-  The breakthroughs or highlights of the manuscript. 
-  Authors can write one or two sentences to describe 
-  the most important part of the paper.
-
-# for the journal Encyclopedia
-encyclopediadef: |
-  For entry manuscripts only: please provide a brief overview
-  of the entry title instead of an abstract.
-entrylink: The Link to this entry published on the encyclopedia platform.
-
-# for the journal Advances in Respiratory Medicine
-# add highlights
-addhighlights: |
-  This is an obligatory section in “Advances in Respiratory Medicine”, 
-  whose goal is to increase the discoverability and readability of the
-  article via search engines and other scholars. Highlights should not 
-  be a copy of the abstract, but a simple text allowing the reader to 
-  quickly and simplified find out what the article is about and what can 
-  be cited from it. Each of these parts should be devoted up to 2~bullet 
-  points.
-
-```
-
-```{r}
-print("prueba en rama")
-print("prueba2")
-```
 
 
 \startlandscape
