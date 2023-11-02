@@ -479,18 +479,48 @@ for (i in seq_along(dic_vars)) {
 Una vez realizado el tratamiento de las variables por tipos, se pasa a obtener las características generales del conjunto de datos previo a la visualización de los mismos.
 
 
-Se tiene que el numero de instancias es de 361934 y el de atributos de 48. Además el tipo de los datos y sus primeros valores para cada atributo se observa de la siguiente forma
+Se tiene que el número de instancias es de 361934 y el de atributos de 48. Emplearemos la función *glimpse* de la librería *dplyr* para obtener una primera impresión del dataset. Mediante esta función se obtiene el tipo de los datos y los primeros valores de cada columna del dataset.
 
 ```{r}
 glimpse(df)
 ```
-
-
+Seguidamente, mediante la función *summary* obtenemos información acerca de las características de cada columna del dataset.
 
 ```{r}
 summary(df)
 ```
 
+En el caso de columnas de tipo numerico, como por ejemplo FACTOR o EDADE. Se han obtenido estadísticos básicos como son el mínimo, el máximo, la mediana, la media y el primer y tercer cuartil. En cambio, en el caso de las columnas de tipo caracter, como por ejemplo IDQ_PV o TAM_MUNI. Se han obtenido las frecuencias de cada uno de los caracteres en su correspondiente columna. Además, mediante la funció *summary* también se obtiene la cantidad de NA's en cada una de las columnas.
+
+
+
+```{r}
+SumarioDatos<-function(data=data,digitos=3)
+{
+  
+  type<-sapply(data,class)
+  levels<-sapply(data,function(x){length(unique(x))})
+  topLevel<-sapply(data,
+                   function(x){t<-table(x)
+                   colnames(t(which.max(t)))})
+  topCount<-sapply(data,function(x){max(table(x))})
+  topFrac<-sapply(data,function(x,digitos){t<-table(x)
+  (max(t)/sum(t))}) %>%round(digits=digitos)
+  missFreq<-sapply(data,function(x){sum(is.na(x)==TRUE)})
+  missFrac<-sapply(data,function(x){sum(is.na(x)==TRUE)/length(x)}) %>%
+    round(digits=digitos)
+  
+  sumario<-data.frame(variable=colnames(data),type=type,levels=levels,topLevel=topLevel,
+                      topCount=topCount,topFrac=topFrac,missFreq=missFreq,missFrac=missFrac)
+  
+  rownames(sumario)<-NULL
+  sumario
+}
+```
+
+```{r}
+print(SumarioDatos(data=df))
+```
 
 
 # Analisis univariante
