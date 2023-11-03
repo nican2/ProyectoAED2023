@@ -155,12 +155,6 @@ addhighlights: |
 
 ```
 
-```{r}
-print("prueba en rama")
-print("prueba2")
-```
-
-
 \startlandscape
 ```{r, mdpinames, echo=FALSE, results='asis'}
 mdpi_journals <- "acoustics, actuators, addictions, admsci, adolescents, aerobiology, aerospace, agriculture, agriengineering, agrochemicals, agronomy, ai, air, algorithms, allergies, alloys, analytica, analytics, anatomia, animals, antibiotics, antibodies, antioxidants, applbiosci, appliedchem, appliedmath, applmech, applmicrobiol, applnano, applsci, aquacj, architecture, arm, arthropoda, arts, asc, asi, astronomy, atmosphere, atoms, audiolres, automation, axioms, bacteria, batteries, bdcc, behavsci, beverages, biochem, bioengineering, biologics, biology, biomass, biomechanics, biomed, biomedicines, biomedinformatics, biomimetics, biomolecules, biophysica, biosensors, biotech, birds, bloods, blsf, brainsci, breath, buildings, businesses, cancers, carbon, cardiogenetics, catalysts, cells, ceramics, challenges, chemengineering, chemistry, chemosensors, chemproc, children, chips, cimb, civileng, cleantechnol, climate, clinpract, clockssleep, cmd, coasts, coatings, colloids, colorants, commodities, compounds, computation, computers, condensedmatter, conservation, constrmater, cosmetics, covid, crops, cryptography, crystals, csmf, ctn, curroncol, cyber, dairy, data, ddc, dentistry, dermato, dermatopathology, designs, devices, diabetology, diagnostics, dietetics, digital, disabilities, diseases, diversity, dna, drones, dynamics, earth, ebj, ecologies, econometrics, economies, education, ejihpe, electricity, electrochem, electronicmat, electronics, encyclopedia, endocrines, energies, eng, engproc, entomology, entropy, environments, environsciproc, epidemiologia, epigenomes, est, fermentation, fibers, fintech, fire, fishes, fluids, foods, forecasting, forensicsci, forests, foundations, fractalfract, fuels, future, futureinternet, futurepharmacol, futurephys, futuretransp, galaxies, games, gases, gastroent, gastrointestdisord, gels, genealogy, genes, geographies, geohazards, geomatics, geosciences, geotechnics, geriatrics, grasses, gucdd, hazardousmatters, healthcare, hearts, hemato, hematolrep, heritage, higheredu, highthroughput, histories, horticulturae, hospitals, humanities, humans, hydrobiology, hydrogen, hydrology, hygiene, idr, ijerph, ijfs, ijgi, ijms, ijns, ijpb, ijtm, ijtpp, ime, immuno, informatics, information, infrastructures, inorganics, insects, instruments, inventions, iot, j, jal, jcdd, jcm, jcp, jcs, jcto, jdb, jeta, jfb, jfmk, jimaging, jintelligence, jlpea, jmmp, jmp, jmse, jne, jnt, jof, joitmc, jor, journalmedia, jox, jpm, jrfm, jsan, jtaer, jvd, jzbg, kidneydial, kinasesphosphatases, knowledge, land, languages, laws, life, liquids, literature, livers, logics, logistics, lubricants, lymphatics, machines, macromol, magnetism, magnetochemistry, make, marinedrugs, materials, materproc, mathematics, mca, measurements, medicina, medicines, medsci, membranes, merits, metabolites, metals, meteorology, methane, metrology, micro, microarrays, microbiolres, micromachines, microorganisms, microplastics, minerals, mining, modelling, molbank, molecules, mps, msf, mti, muscles, nanoenergyadv, nanomanufacturing, nanomaterials, ncrna, ndt, network, neuroglia, neurolint, neurosci, nitrogen, notspecified, nri, nursrep, nutraceuticals, nutrients, obesities, oceans, ohbm, onco, oncopathology, optics, oral, organics, organoids, osteology, oxygen, parasites, parasitologia, particles, pathogens, pathophysiology, pediatrrep, pharmaceuticals, pharmaceutics, pharmacoepidemiology, pharmacy, philosophies, photochem, photonics, phycology, physchem, physics, physiologia, plants, plasma, platforms, pollutants, polymers, polysaccharides, poultry, powders, preprints, proceedings, processes, prosthesis, proteomes, psf, psych, psychiatryint, psychoactives, publications, quantumrep, quaternary, qubs, radiation, reactions, receptors, recycling, regeneration, religions, remotesensing, reports, reprodmed, resources, rheumato, risks, robotics, ruminants, safety, sci, scipharm, sclerosis, seeds, sensors, separations, sexes, signals, sinusitis, skins, smartcities, sna, societies, socsci, software, soilsystems, solar, solids, spectroscj, sports, standards, stats, std, stresses, surfaces, surgeries, suschem, sustainability, symmetry, synbio, systems, targets, taxonomy, technologies, telecom, test, textiles, thalassrep, thermo, tomography, tourismhosp, toxics, toxins, transplantology, transportation, traumacare, traumas, tropicalmed, universe, urbansci, uro, vaccines, vehicles, venereology, vetsci, vibration, virtualworlds, viruses, vision, waste, water, wem, wevj, wind, women, world, youth, zoonoticdis"
@@ -362,7 +356,6 @@ discussion is unusually long or complex.
 This section is not mandatory, but may be added if there are patents resulting
 from the work reported in this manuscript.
 
-# CÓDIGO JESÚS
 
 ```{r}
 library(stringr)
@@ -371,6 +364,11 @@ library(readr)
 library(tidyr)
 library(dplyr)
 library(visdat)
+
+# Para la función aggr de la sección de características del dataset
+library('VIM')
+library("colorspace")
+library('grid')
 ```
 
 ```{r}
@@ -474,27 +472,58 @@ for (i in seq_along(dic_vars)) {
 
 ```
 
-### Características generales
+### Descripción del daset
 
-Una vez realizado el tratamiento de las variables por tipos, se pasa a obtener las características generales del conjunto de datos previo a la visualización de los mismos.
+Descripción del dataset(fuente y año y demás información)
 
 
-Se tiene que el número de instancias es de 361934 y el de atributos de 48. Emplearemos la función *glimpse* de la librería *dplyr* para obtener una primera impresión del dataset. Mediante esta función se obtiene el tipo de los datos y los primeros valores de cada columna del dataset.
+Se tiene que el número de instancias es de 361934 y el de atributos de 48. 
+
+#### Elección de las variables de interés
+
+Puesto que 48 son demasiadas variables, se ha decidido hacer una selección de las variables de mayor interés. De este modo, será posible obtener gráficos más claros y entendibles para el lector.
+
+Las variables de interese seleccionadas han sido:
+
++ **IDQ_PV**: Código de la provincia de residencia.
++ **TAM_MUNI**: Tamaño del municipio.
++ **EC**: Estado civil legal.
++ **EDADEC**: Edad de adquisición del estado civil legal.
++ **ESTUDIOS**: Nivel de estudios alcanzado.
++ **ANOESTUD**: Año que alcanzó su mayor nivel de estudios.
++ **EDADESTUD**: Edad a la que alcanzó su mayor nivel de estudios.
++ **CAMPO**: Campo de los estuidos.
++ **SITLAB**: Situación laboral durante la última semana.
++ **SATISTIEMP**: Grado de satisfacción en el tiempo de desplazamiento al trabajo.
++ **COMPRAINT**: Realización de compras por internet en el último mes.
++ **HIJOS**: Tenencia de hijos.
++ **NHIJOS**: Número total de hijos.
++ **TDOMEST**: Grado de participación en las tareas domésticas del hogar.
+
+```{r include=FALSE}
+df_reducido <- df[,c("IDQ_PV", "TAM_MUNI", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "SATISTIEMP", "COMPRAINT", "HIJOS", "NHIJOS", "TDOMEST")]
+```
+
+### Características generales del dataset reducido
+
+Previamente al empleo de técnicas de visualización de los datos es importante conocer las características del dataset con el que se está tratando. Así como conocer los tipos de las variables, los diferentes valores que puede tomar cada variables, la existencia de niveles y factoes dentro de las variables o la existencia de NAs en las variables.
+
+En primer lugar, emplearemos la función *glimpse* de la librería *dplyr* para obtener una primera impresión del dataset. Mediante esta función se obtiene el tipo de los datos y los primeros valores de cada columna del dataset.
 
 ```{r}
-glimpse(df)
+glimpse(df_reducido, width = 70) # El parámetro width sirve para elegir la longitud de los datos a mostrar (util para que no quede feo en el pdf)
 ```
 Seguidamente, mediante la función *summary* obtenemos información acerca de las características de cada columna del dataset.
 
 ```{r}
-summary(df)
+summary(df_reducido)
 ```
 
-En el caso de columnas de tipo numerico, como por ejemplo FACTOR o EDADE. Se han obtenido estadísticos básicos como son el mínimo, el máximo, la mediana, la media y el primer y tercer cuartil. En cambio, en el caso de las columnas de tipo caracter, como por ejemplo IDQ_PV o TAM_MUNI. Se han obtenido las frecuencias de cada uno de los caracteres en su correspondiente columna. Además, mediante la funció *summary* también se obtiene la cantidad de NA's en cada una de las columnas.
+En el caso de columnas de tipo numerico, como por ejemplo EDADEC o ANOESTUD. Se han obtenido estadísticos básicos como son el mínimo, el máximo, la mediana, la media y el primer y tercer cuartil. En cambio, en el caso de las columnas de tipo caracter, como por ejemplo IDQ_PV o TAM_MUNI. Se han obtenido las frecuencias de cada uno de los caracteres en su correspondiente columna. Además, mediante la funció *summary* también se obtiene la cantidad de NA's en cada una de las columnas.
 
+En tercer lugar, se ha generado una tabla de gran utilidad para identificar las variables que son de tipo factor y las que tienen diferentes niveles en sus datos. Además también es posible obtener el valor del nivel más alto y su frecuencia de aparición. Por último, en la tabla también quedan representados las cantidad de NAs así como el porcentaje de los datos que representan dicha cantidad de NAs.
 
-
-```{r}
+```{r include=FALSE}
 SumarioDatos<-function(data=data,digitos=3)
 {
   
@@ -519,17 +548,14 @@ SumarioDatos<-function(data=data,digitos=3)
 ```
 
 ```{r}
-print(SumarioDatos(data=df))
+print(SumarioDatos(data=df_reducido))
 ```
+
+En cuarto lugar, para finalizar con las características del dataset. Se ha generado el siguiente gráfico haciendo uso de la función *aggr* de la librería *VIM*. Mediante ella es posible representar visualmente la candidad de NAs en el dataset. Y, además permite analizar la distribución de los valores faltantes en diferentes variables y combinaciones.
 
 ```{r}
-library('VIM')
-library("colorspace")
-library('grid')
-aggr(df[,1:15], prop = FALSE, combined = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE)
+aggr(df_reducido, prop = FALSE, combined = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE)[2]
 ```
-
-
 
 # Analisis univariante
 ```{r}
