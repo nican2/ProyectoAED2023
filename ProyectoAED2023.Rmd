@@ -558,9 +558,6 @@ aggr(df_reducido, prop = FALSE, combined = TRUE, numbers = TRUE, sortVars = TRUE
 ```
 
 # Analisis univariante
-```{r}
-# Prueba
-```
 
 
 # Analisis multivariante
