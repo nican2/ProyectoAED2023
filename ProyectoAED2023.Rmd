@@ -522,6 +522,14 @@ SumarioDatos<-function(data=data,digitos=3)
 print(SumarioDatos(data=df))
 ```
 
+```{r}
+library('VIM')
+library("colorspace")
+library('grid')
+aggr(df[,1:15], prop = FALSE, combined = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE)
+```
+
+
 
 # Analisis univariante
 ```{r}
