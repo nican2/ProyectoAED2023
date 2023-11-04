@@ -55,15 +55,16 @@ El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nac
 # Configuración general de chunks
 library(knitr)
 options(width = 100)
-knitr::opts_chunk$set(echo = T, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F)
+knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F)
 ```
 
 Como es habitual, cargamos las librerías que necesitamos al inicio del documento.
 
-```{r librerias, message = T, include = T, echo = T}
+```{r librerias, message = F, include = T, echo = F}
 # Carga de librerías necesarias con pacman
 library(pacman)
-pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven)
+pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra)
+print("hola")
 ```
 
 Pasamos ahora a hacer la carga del conjunto de datos, presentado tanto en .txt como .csv en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*. Este fichero nos será especialmente útil puesto que permitirá una automatización para convertir nuestra *Raw data* a *Technically correct data*, teniendo cada variable su tipo correcto.
@@ -181,7 +182,7 @@ for (i in seq_along(dic_vars)) {
 Una vez está hecha la conversión del dataset que contaba con un mayor número de variables procedemos a hacer una unión con el otro mencionado anteriormente, solo utilizando algunas variables de interés como SEXO o EDAD.
 
 
-```{r}
+```{r seleccion_columnas}
 columnas_a_leer <- c("IDEN", "NPV", "FACTOR", "SEXO", "EDAD", "NACIM", "PNACIM")
 df_2 <- read_dta("./data/ECEPOVhogar_2021.dta", col_select = columnas_a_leer)
 ```
@@ -212,13 +213,55 @@ Hacemos el merge utilizando las variables de identificación IDEN, NPV y FACTOR,
 df_merged <- merge(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "NACIM", "PNACIM")], by = c("IDEN", "NPV", "FACTOR"), all.x = TRUE)
 ```
 
+## Resumen de los datos
+
 Podemos hacernos una idea rápida bastante completa de cómo son los datos pertenecientes a nuestro dataframe, *df*, haciendo uso de la función glimpse, perteneciente a la librería dplyr. 
 
 ```{r glimpse}
-dplyr::glimpse(df_merged)
+dplyr::glimpse(df_merged, width = 60)
 ```
 
-Tras un análisis de las variables ofrecidas en *dr_ECEPOVadultos_2021.xlsx* y *dr_ECEPOVhogar_2021.xlsx*, consideramos que muchas de las variables no nos otorgarán interés para el análisis que particularmente nosotros deseamos aplicar, por lo que seleccionaremos aquellas relevantes.
+Observamos que es un dataset con total de 361934 observaciones y con 52 variables, lo cual es mucho más de lo que necesitaremos.
+
+Tras un análisis de las variables en *dr_ECEPOVadultos_2021.xlsx* y 
+*dr_ECEPOVhogar_2021.xlsx*, consideramos que muchas de las variables no nos otorgarán interés para el análisis que particularmente nosotros deseamos aplicar, por lo que seleccionaremos aquellas relevantes.
+
+
+```{r variables_usadas, include = T}
+data_info <- data.frame(
+  Variable = c(
+    "IDQ_PV", "TAM_MUNI", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD",
+    "EDADESTUD", "CAMPO", "SITLAB", "SATISTIEMP", "COMPRAINT", "HIJOS",
+    "NHIJOS", "TDOMEST", "SEXO", "EDAD", "NACIM", "PNACIM"
+  ),
+  Descripción = c(
+    "Código de la provincia de residencia.",
+    "Tamaño del municipio.",
+    "Estado civil legal.",
+    "Edad de adquisición del estado civil legal.",
+    "Nivel de estudios alcanzado.",
+    "Año que alcanzó su mayor nivel de estudios.",
+    "Edad a la que alcanzó su mayor nivel de estudios.",
+    "Campo de los estudios.",
+    "Situación laboral durante la última semana.",
+    "Grado de satisfacción en el tiempo de desplazamiento al trabajo.",
+    "Realización de compras por internet en el último mes.",
+    "Tenencia de hijos.",
+    "Número total de hijos.",
+    "Grado de participación en las tareas domésticas del hogar.",
+    "Sexo de la persona.",
+    "Edad de la persona.",
+    "Lugar de nacimiento de la persona (España u otro sitio).",
+    "País de nacimiento exacto de la persona."
+  )
+)
+
+knitr::kable(data_info, format = "latex",
+             booktabs = TRUE, 
+             caption = "Variables de interés para el estudio.", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table", position = "H")
+```
 
 ```{r seleccion_variables}
 var_interes <- c("IDQ_PV", "TAM_MUNI", "SEXO", "EDAD", "NACIM", "PNACIM", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "SATISTIEMP", "COMPRAINT", "NHIJOS", "HIJOS", "TDOMEST")
@@ -226,6 +269,14 @@ var_interes <- c("IDQ_PV", "TAM_MUNI", "SEXO", "EDAD", "NACIM", "PNACIM", "EC", 
 df <- df_merged %>%
   select(var_interes)
 ```
+
+```{r glimpse_reducido}
+glimpse(df, width = 60)
+```
+
+Seguidamente, mediante la función *summary* obtenemos información acerca de las características de cada columna del dataset.
+
+
 
 # Ideas de Jesús
 
