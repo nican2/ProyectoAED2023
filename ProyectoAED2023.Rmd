@@ -47,7 +47,7 @@ output:
 
 # Introducción.
 
-El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nacional de Estadística (INE). En concreto, pertenece a una encuesta realizada a la población en el año 2021 que tiene como propósito el proporcionar información detallada sobre personas, viviendas y edificios que no puede obtenerse a través de registros administrativos. En nuestro caso, hemos decidido hacer la exploración de una parte de esta, relacionada con cuestiones que se les hizo a los adultos (personas de 16 años o más) en las viviendas aleatoriamente seleccionadas. Esta está disponible  [aquí](https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177092&menu=resultados&idp=1254735572981#!tabs-1254736195790).
+El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nacional de Estadística (INE). En concreto, pertenece a una encuesta realizada a la población en el año 2021 que tiene como propósito el proporcionar información detallada sobre personas, viviendas y edificios que no puede obtenerse a través de registros administrativos. En nuestro caso, hemos decidido hacer la exploración en su mayoría de la parte relacionada a cuestiones que se les hizo a adultos (personas de 16 años o más). Para agregar más variables de interés se escogieron algunas de otro conjunto de datos, también de esta encuesta, hecho a todos los integrantes de la vivienda y no solo a adultos. El enlace a los ficheros de microdatos está presente [aquí](https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177092&menu=resultados&idp=1254735572981#!tabs-1254736195790).
 
 ## Carga de librerías y datos necesarios para el análisis
 
@@ -66,27 +66,19 @@ library(pacman)
 pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven)
 ```
 
-Pasamos ahora a hacer la carga del conjunto de datos, presentado en .txt en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*. Este fichero nos será especialmente útil puesto que permitirá una automatización para convertir nuestra *Raw data* a *Technically correct data*, teniendo cada variable su tipo correcto.
+Pasamos ahora a hacer la carga del conjunto de datos, presentado tanto en .txt como .csv en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*. Este fichero nos será especialmente útil puesto que permitirá una automatización para convertir nuestra *Raw data* a *Technically correct data*, teniendo cada variable su tipo correcto.
 
-```{r lectura_dataset}
+```{r extraccion_dataset_csv}
+ruta_csv <- "data/ECEPOVadultos_2021.csv"
+df_1 <- read_delim(ruta_csv, 
+    delim = "\t", escape_double = FALSE, 
+    trim_ws = TRUE)
+```
+
+```{r lectura_dataset_readLines, eval = FALSE}
 ruta_txt <- "./data/md_ECEPOVadultos_2021.txt"
 lines <- readLines(ruta_txt)
 
-set.seed(33)
-lines <- sample(lines, 10000) # si se desea carga rápida (quitar luego)
-```
-
-```{r lectura_diseno}
-ruta_excel <- "data/dr_ECEPOVadultos_2021.xlsx"
-excel_info <- read_excel(ruta_excel, sheet = "Diseño", range = "A2:H50", col_names = TRUE)
-
-# Almacenamiento de distintas hojas del excel para optimizar el código
-Tablas1 <- read_excel(ruta_excel, sheet = "Tablas1", range = "A4:C63", col_names = TRUE)
-Tablas2 <- read_excel(ruta_excel, sheet = "Tablas2", range = "A4:C112", col_names = TRUE)
-Tablas3 <- read_excel(ruta_excel, sheet = "Tablas3", range = "A4:C48", col_names = TRUE)
-```
-
-```{r extraccion_dataset}
 # Función para sacar las subcadenas en cada línea del .txt
 
 extract_substrings <- function(line, start_position, length) {
@@ -104,21 +96,32 @@ extract_substrings <- function(line, start_position, length) {
 # Guardaremos las substrings en una matriz por eficiencia computacional
 
 num_lines <- length(lines)
-num_variables <- length(excel_info$Variable)
+num_variables <- length(excel_info_1$Variable)
 substring_matrix <- matrix("", nrow = num_lines, ncol = num_variables)
 
 # Extraer las subcadenas para todas las líneas y guardarlas en las filas de la matriz
 
 for (i in 1:num_lines) {
-  substring_matrix[i, ] <- extract_substrings(lines[i], excel_info$Posición, excel_info$Longitud)
+  substring_matrix[i, ] <- extract_substrings(lines[i], excel_info_1$Posición, excel_info_1$Longitud)
 }
 
 # Conversión al dataframe desde la matriz
 
-df <- as.data.frame(substring_matrix)
-colnames(df) <- excel_info$Variable
+df_1 <- as.data.frame(substring_matrix)
+colnames(df_1) <- excel_info_1$Variable
 
 ```
+
+```{r lectura_diseno}
+ruta_excel <- "data/dr_ECEPOVadultos_2021.xlsx"
+excel_info_1 <- read_excel(ruta_excel, sheet = "Diseño", range = "A2:H50", col_names = TRUE)
+
+# Almacenamiento de distintas hojas del excel para optimizar el código
+Tablas1 <- read_excel(ruta_excel, sheet = "Tablas1", range = "A4:C63", col_names = TRUE)
+Tablas2 <- read_excel(ruta_excel, sheet = "Tablas2", range = "A4:C112", col_names = TRUE)
+Tablas3 <- read_excel(ruta_excel, sheet = "Tablas3", range = "A4:C48", col_names = TRUE)
+```
+
 
 A pesar de que fue de gran utilidad el fichero que ofrecía INE para la transformación de las variables a un tipo correcto, aparecieron algunos fallos que tuvimos que solventar de manera manual. Determinadas variables no fueron bien codificadas por parte de INE, de tal forma que hubo que modificar ligeramente el fichero .xlsx. Concretamente, fue en algunos *diccionarios* de variables en los que no terminaba de estar correctamente bien determinado el *código* (lo que sería el level en un factor). El error presentado (en algunas variables) consistía, básicamente, en que aparecía "01" en lugar de "1" (para otros números similar), valor recogido en las observaciones.
 
@@ -127,20 +130,20 @@ A pesar de que fue de gran utilidad el fichero que ofrecía INE para la transfor
 
 manual_change <- c("ESTUDIOS", "CAMPO", "NDESPLA", "MTRANSPOR_1", "MTRANSPOR_2")
 
-df <- df %>%
+df_1 <- df_1 %>%
   mutate(across(all_of(manual_change), ~ str_remove_all(., " ")))
 
 # Conversión de las variables correspondientes a tipo numérico según indica INE
 
-dic_tipo <- excel_info$Tipo
+dic_tipo <- excel_info_1$Tipo
 
-df <- df %>%
+df_1 <- df_1 %>%
   mutate(across(which(dic_tipo == "N"), as.numeric)) %>%
   mutate()
 
 # Transformación a factores de las variables pertinentes usando el fichero que ofrece INE
 
-excel_dic <- excel_info %>%
+excel_dic <- excel_info_1 %>%
   filter(!is.na(`Diccionario de la variable`))
 
 dic_vars <- excel_dic$Variable
@@ -170,27 +173,58 @@ for (i in seq_along(dic_vars)) {
     labels <- unlist(labels[[1]])
   }
   
-  df <- df %>%
+  df_1 <- df_1 %>%
       mutate_at(vars(dic_vars[i]), ~factor(., levels = levels, labels = labels)) 
 }
 ```
 
-Podemos hacernos una idea rápida bastante completa de cómo son los datos pertenecientes a nuestro dataframe, *df*, haciendo uso de la función glimpse, perteneciente a la librería dplyr. 
+Una vez está hecha la conversión del dataset que contaba con un mayor número de variables procedemos a hacer una unión con el otro mencionado anteriormente, solo utilizando algunas variables de interés como SEXO o EDAD.
+
 
 ```{r}
-dplyr::glimpse(df)
-```
-
-# Juntar otros dataset para obtener más variables:
-
-```{r}
-columnas_a_leer <- c("IDEN", "NPV", "SEXO", "EDAD", "NACIM", "PNACIM")
-
+columnas_a_leer <- c("IDEN", "NPV", "FACTOR", "SEXO", "EDAD", "NACIM", "PNACIM")
 df_2 <- read_dta("./data/ECEPOVhogar_2021.dta", col_select = columnas_a_leer)
 ```
 
-```{r}
-df <- merge(df, df_2[, c("IDEN", "NPV", "EDAD", "SEXO", "NACIM")], by = c("IDEN", "NPV"), all.x = TRUE)
+Las variables SEXO, NACIM y PNACIM de este nuevo dataset deben ser convertidas a sus tipos correctos, por lo que se hace uso de la información que proporciona INE sobre las variables.
+
+```{r lectura_diseno_2}
+ruta_excel_2 <- "data/dr_ECEPOVhogar_2021.xlsx"
+excel_info_2 <- read_excel(ruta_excel_2, sheet = "Diseño", range = "A2:H162", col_names = TRUE)
+
+# Cogemos los diccionarios manualmente puesto que solo tenemos 3 variables y el proceso es más eficiente en lectura
+
+T_SEXO <- read_excel(ruta_excel_2, sheet = "Tablas2", range = "A6:B8", col_names = TRUE)
+T_NACIM <- read_excel(ruta_excel_2, sheet = "Tablas2", range = "A26:B28", col_names = TRUE)
+T_PAIS <- read_excel(ruta_excel_2, sheet = "Tablas1", range = "A74:B276", col_names = TRUE)
+```
+
+```{r conversion_dataset_2}
+df_2 <- df_2 %>%
+  mutate(SEXO = factor(SEXO, levels = T_SEXO$Código, labels = T_SEXO$Descripción)) %>%
+  mutate(NACIM = factor(NACIM, levels = T_NACIM$Código, labels = T_NACIM$Descripción)) %>%
+  mutate(PNACIM = factor(PNACIM, levels = T_PAIS$Código, labels = T_PAIS$Descripción))
+```
+
+Hacemos el merge utilizando las variables de identificación IDEN, NPV y FACTOR, de tal manera que podamos establecer una relación unívoca entre los adultos presentes en el primer y segundo dataset.
+
+```{r union_datasets}
+df_merged <- merge(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "NACIM", "PNACIM")], by = c("IDEN", "NPV", "FACTOR"), all.x = TRUE)
+```
+
+Podemos hacernos una idea rápida bastante completa de cómo son los datos pertenecientes a nuestro dataframe, *df*, haciendo uso de la función glimpse, perteneciente a la librería dplyr. 
+
+```{r glimpse}
+dplyr::glimpse(df_merged)
+```
+
+Tras un análisis de las variables ofrecidas en *dr_ECEPOVadultos_2021.xlsx* y *dr_ECEPOVhogar_2021.xlsx*, consideramos que muchas de las variables no nos otorgarán interés para el análisis que particularmente nosotros deseamos aplicar, por lo que seleccionaremos aquellas relevantes.
+
+```{r seleccion_variables}
+var_interes <- c("IDQ_PV", "TAM_MUNI", "SEXO", "EDAD", "NACIM", "PNACIM", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "SATISTIEMP", "COMPRAINT", "NHIJOS", "HIJOS", "TDOMEST")
+  
+df <- df_merged %>%
+  select(var_interes)
 ```
 
 # Ideas de Jesús
@@ -200,10 +234,10 @@ Univariante: distribución de provincia, estado civil, campos de estdios, situac
 Nota: meter mapa por provincias.
 
 
-```{r tab1, echo=FALSE}
-knitr::kable(mtcars[1:5, 1:3], format = "latex", 
+```{r tab1, echo = FALSE}
+knitr::kable(mtcars[1:5, 1:3], format = "latex",
              booktabs = TRUE, 
-             caption = "This is a table caption. Tables should be placed in the 
+             caption = "This is a table caption. Tables should be placed in the
              main text near to the first time they are~cited.", 
              align = 'ccc', centering = FALSE,
              table.envir = "table", position = "H")
