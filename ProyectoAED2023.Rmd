@@ -402,7 +402,49 @@ p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
 
 p_edad
 ```
+```{r}
+# Calcular la media y la desviación estándar de la variable "EDAD"
 
+media_edad <- mean(df$EDAD)
+desviacion_edad <- sd(df$EDAD)
+
+# Crear el histograma de densidad y superponer la curva gaussiana
+
+p_edad_histogram_density <- ggplot(df, aes(x = EDAD)) +
+  geom_histogram(aes(y = after_stat(density)), binwidth = 1, fill = "lightblue", color = "black") +
+  labs(
+    title = "Distribución de edades en la encuesta",
+    x = "Edad / años",
+    y = "Densidad"
+  ) +
+  theme_minimal() +
+  scale_x_continuous(breaks = seq(15, 120, by = 10)) +
+  
+  # Superponer la curva gaussiana 
+  
+  stat_function(
+    fun = dnorm,  # Función de densidad de probabilidad normal
+    args = list(mean = media_edad, sd = desviacion_edad),
+    color = "red",
+    size = 1
+  )
+
+p_edad_histogram_density
+```
+```{r}
+# Crea un QQ plot para la variable "EDAD"
+
+qqplot_edad <- ggplot(df, aes(sample = EDAD, color = SEXO)) +
+  stat_qq() +
+  stat_qq_line() +
+  ggtitle("QQ Plot para la variable EDAD") +
+  xlab("Cuantiles teóricos") +
+  ylab("Cuantiles observados")
+
+qqplot_edad
+```
+
+Añadir histograma con distribución gaussiana superpuesta? gráfico qq plot?
 
 ```{r numhijos_by_nacionalidad_separado}
 df_espana <- df %>%
@@ -479,6 +521,7 @@ p_boxplot_nacim
 ```
 Podemos observar que hay múltiples outliers, como consecuencia de que la inmensa mayoría de la gente suele estar dentro del rango intercuartílico para el número de hijos, siendo muy raro tener 6 hijos o más. Un tratamiento más riguroso para detectar las anomalías se realizará posteriormente.
 
+### Variables de tipo categórico
 
 
 
