@@ -213,9 +213,9 @@ Hacemos el merge utilizando las variables de identificación IDEN, NPV y FACTOR,
 df_merged <- merge(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "NACIM", "PNACIM")], by = c("IDEN", "NPV", "FACTOR"), all.x = TRUE)
 ```
 
-## Resumen de los datos
+## Características generales de los datos
 
-Podemos hacernos una idea rápida bastante completa de cómo son los datos pertenecientes a nuestro dataframe, *df*, haciendo uso de la función glimpse, perteneciente a la librería dplyr. 
+Podemos hacernos una idea rápida de cuáles son los datos pertenecientes a nuestro dataframe, *df*, haciendo uso de la función glimpse, perteneciente a la librería dplyr. 
 
 ```{r glimpse}
 dplyr::glimpse(df_merged, width = 60)
@@ -223,7 +223,7 @@ dplyr::glimpse(df_merged, width = 60)
 
 Observamos que es un dataset con total de 361934 observaciones y con 52 variables, lo cual es mucho más de lo que necesitaremos.
 
-Tras un análisis de las variables en *dr_ECEPOVadultos_2021.xlsx* y 
+Tras un análisis de las variables en *dr_ECEPOVadultos_2021.xlsx* y  
 *dr_ECEPOVhogar_2021.xlsx*, consideramos que muchas de las variables no nos otorgarán interés para el análisis que particularmente nosotros deseamos aplicar, por lo que seleccionaremos aquellas relevantes.
 
 
@@ -274,7 +274,7 @@ df <- df_merged %>%
 glimpse(df, width = 60)
 ```
 
-Seguidamente, mediante la función *summary* obtenemos información acerca de las características de cada columna del dataset.
+Seguidamente, mediante la función *summary* obtenemos información acerca de las características de cada columna del dataset. 
 
 ```{r summary}
 summary(df)
@@ -330,15 +330,71 @@ kable_res <- knitr::kable(SumarioDatos(data = df), format = "latex",
 kable_styling(kable_res, font_size = 7, position = "left" )
 ```
 
-## Datos faltantes
+### Datos faltantes
 
-Una representación precisa de cómo se distribuyen los *missing values* por nuestro conjunto de datos lo otorga la librería *VIM* con la función *aggr*. Puede observarse 
+Una representación precisa de cómo se distribuyen los *missing values* por nuestro conjunto de datos lo otorga la librería *VIM* con la función *aggr*. Se han representado solamente aquellas variables que cuentan con algún NA para facilitar la visualización. En el siguiente gráfico puede observarse tanto la proporción total de valores faltantes en dichas variables individualmente (izquierda), como una serie de combinaciones posibles entre ellas de valores faltantes. 
 
-```{r missing_values, include = T, fig.width = 5.9, fig.height = 4, fig.align = "left"}
-df %>%
-  select_if(~ anyNA(.)) %>%
-  aggr(prop = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE, cex.axis = 0.6, cex.lab = 0.7, digits = 1, gap = 2, cex.numbers = 0.6)
+Así, encontramos por ejemplo que la combinación de NA en (SATISTIEMP, ANOESTUD, EDADESTUD, CAMPO) cuenta con una proporción del 26.49 % de los datos totales.
+
+```{r missing_values, include = T, fig.width = 5.8, fig.height = 4, fig.align = "left"}
+
+aggr_result <- capture.output({
+  df %>%
+    select_if(~ anyNA(.)) %>%
+    aggr(prop = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE, cex.axis = 0.6, cex.lab = 0.7, digits = 1, gap = 2, cex.numbers = 0.6, plot = TRUE)
+})
+
+# Mostrar solo el plot sin el data.frame para el Rmd
+invisible(aggr_result)
 ```
+# Exploración inicial / visualización
+
+Una vez hemos asegurado que nuestros datos estén en la estructura de data.frame, tengan valores correctamente etiquetados y estén almacenados con el tipo correcto, podemos empezar a buscar posibles patrones en las instancias o entre las características.
+
+## Análisis univariante.
+
+Distinguiremos el análisis entre las variables de tipo numérico y las de tipo categórica (factor) presentes, ya que ciertos estadísticos descriptivos (como por ejemplo la media) carecen de sentido en las pertenecientes al último tipo.
+
+### Variables de tipo numérico
+
+```{r}
+df %>%
+  select_if(is.numeric) %>%
+  summarise_all(list(
+    mean = ~mean(., na.rm = TRUE), 
+    length = ~length(.),
+    sd = ~sd(., na.rm = TRUE),
+    skewness = ~skewness(., na.rm = TRUE),
+    kurtosis = ~kurtosis(., na.rm = TRUE)
+    )) %>%
+  pivot_longer(cols = everything())
+```
+
+```{r}
+mtcars%>%dplyr::select(mpg,hp,wt)%>% 
+summarise(across(everything(),list(
+  mean=~mean(.,na.rm=TRUE),
+  length=~length(.),
+  sd=~sd(.,na.rm=TRUE),
+  skewness=~skewness(.,na.rm=TRUE),
+  kurtosis=~kurtosis(.,na.rm=TRUE)
+  ))) %T>%
+  print%>%
+  round(.,digits=2)%>%
+  # Reordenamos todas las columnas
+  gather() %T>% # Por defecto key=key, value=value, con todas las columnas
+  print%>%
+  tidyr::separate(col=key,c("var","type"))%T>% # separate(col=key,  into=c("var","type"))
+  print%>%
+   spread(key=type,value=value)  #%>%
+  # kable() %>%
+  # kable_styling(bootstrap_options = "striped", full_width = F)
+
+# gather(key=estadistico,value=valor) %>% 
+#   separate(key=estadistico, into=valorc("var","type")) %>%
+#   spread(type, value)
+```
+
 
 
 Nota: meter mapa por provincias.
