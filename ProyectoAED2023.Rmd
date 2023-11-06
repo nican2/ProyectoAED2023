@@ -12,8 +12,9 @@ type: article
 
 # front matter
 simplesummary: |
-  A Simple summary goes here.
+  En este proyecto de Análisis Exploratorio de Datos se explora un conjunto de datos real con el fin de obtener valiosas perspectivas y conclusiones.
 abstract: |
+  
   A single paragraph of about 200 words maximum. For research articles, 
   abstracts should give a pertinent overview of the work. We strongly encourage
   authors to use the following style of structured abstracts, but without 
@@ -27,23 +28,11 @@ abstract: |
   
 # back matter
 keywords: |
-  keyword 1; keyword 2; keyword 3 (list three to ten pertinent keywords specific 
-  to the article, yet reasonably common within the subject discipline.).
+  Análisis exploratorio de datos; Patrones en datos; Encuesta de población; Limpieza de datos
 acknowledgement: |
-  All sources of funding of the study should be disclosed. Please clearly 
-  indicate grants that you have received in support of your research work. 
-  Clearly state if you received funds for covering the costs to publish in open 
-  access.
+  Es necesario mostrar nuestro agradecimiento a ValgrAI por el apoyo en el pago de la matrícula para el Máster en Ciencia de Datos (UV). Además, no nos podemos olvidar del profesorado que nos permitirá formarnos en este ámbito.
 authorcontributions: |
-  For research articles with several authors, a short paragraph specifying their 
-  individual contributions must be provided. The following statements should be 
-  used ``X.X. and Y.Y. conceive and designed the experiments; X.X. performed the 
-  experiments; X.X. and Y.Y. analyzed the data; W.W. contributed 
-  reagents/materials/analysis tools; Y.Y. wrote the paper.'' Authorship must be
-  limited to those who have contributed substantially to the work reported.
-supplementary: |
- The following supporting information can be downloaded at:  
- \linksupplementary{s1}, Figure S1: title; Table S1: title; Video S1: title.
+  Aquí tenemos que poner más o menos lo que ha participado cada uno.
 abbreviations:
   - short: AED
     long: Análisis Exploratorio de Datos
@@ -56,339 +45,42 @@ output:
     extra_dependencies: longtable
 ---
 
-# Version
+# Introducción.
 
-This Rmd-skeleton uses the mdpi Latex template published 2023-03-25. 
-However, the official template gets more frequently updated than the **rticles**
-package. Therefore, please make sure prior to paper submission, that you're 
-using the most recent .cls, .tex and .bst files 
-(available [here](http://www.mdpi.com/authors/latex)).
+El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nacional de Estadística (INE). En concreto, pertenece a una encuesta realizada a la población en el año 2021 que tiene como propósito el proporcionar información detallada sobre personas, viviendas y edificios que no puede obtenerse a través de registros administrativos. En nuestro caso, hemos decidido hacer la exploración en su mayoría de la parte relacionada a cuestiones que se les hizo a adultos (personas de 16 años o más). Para agregar más variables de interés se escogieron algunas de otro conjunto de datos, también de esta encuesta, hecho a todos los integrantes de la vivienda y no solo a adultos. El enlace a los ficheros de microdatos está presente [aquí](https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177092&menu=resultados&idp=1254735572981#!tabs-1254736195790).
 
-# Article Header Information
+## Carga de librerías y datos necesarios para el análisis
 
-The YAML header includes information needed mainly for formatting the front and 
-back matter of the article. Required elements include:
-
-```yaml
-title: Title of the paper
-author:
-  - name: first and last name
-    affil: |
-      One or more comma seperated numbers corresponding to affilitation
-      and one or more  comma seperated symbols corresponding 
-      optional notes.
-    orcid: optional orcid number
-affiliation:  
-  - num: 1,..., n for each affiliation
-    address: required
-    email: required
-authorcitation: |
-  Lastname, F.
-correspondence: |
-  email@email.com; Tel.: +XX-000-00-0000.
-journal: notspecified
-type: article
-status: submit
+```{r setup, cache = F, echo = F, message = F, warning = F, tidy = F}
+# Configuración general de chunks
+library(knitr)
+options(width = 100)
+knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F)
 ```
 
-Journal options are in Table \ref{tab:mdpinames}. The `status` variable should 
-generally not be changed by authors. The `type` variable describes 
-the type of of submission and defaults to `article` but can be replaced with any of the ones in Table \ref{tab:mdpitype}
+Como es habitual, cargamos las librerías que necesitamos al inicio del documento.
 
-```{r mdpitype, echo = FALSE}
-type <- c("abstract, addendum, article, book, bookreview, briefreport, 
-casereport, comment, commentary, communication, conferenceproceedings, 
-correction, conferencereport, entry, expressionofconcern, extendedabstract, 
-datadescriptor, editorial, essay, erratum, hypothesis, interestingimage, 
-obituary, opinion, projectreport, reply, retraction, review, perspective, 
-protocol, shortnote, studyprotocol, systematicreview, supfile, 
-technicalnote, viewpoint, guidelines, registeredreport, tutorial")
-knitr::kable(rticles::string_to_table(type, 3), 
-             col.names = NULL, format = "latex", booktab = TRUE, 
-             caption = "MDPI article types.")
+```{r librerias, message = F, include = T, echo = F}
+# Carga de librerías necesarias con pacman
+library(pacman)
+pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra)
 ```
 
-## Journal Specific YAML variables
+Pasamos ahora a hacer la carga del conjunto de datos, presentado tanto en .txt como .csv en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*. Este fichero nos será especialmente útil puesto que permitirá una automatización para convertir nuestra *Raw data* a *Technically correct data*, teniendo cada variable su tipo correcto.
 
-```yaml
-# for journal Diversity,
-# add the Life Science Identifier using:
-lsid: http://zoobank.org/urn:lsid:zoobank.org:act:nnnn
-
-
-# for journal Applied Sciences
-# add featured application
-featuredapplication: |
-  Authors are encouraged to provide a concise 
-  description of the specific application or 
-  a potential application of the work. This 
-  section is not mandatory.
-
-# for the journal Data
-# add dataset doi and license
-dataset: https://doi.org/10.1000/182
-datasetlicense: CC-BY-4.0
-
-# for the journal Toxins
-# add key contributions
-keycontributions: |
-  The breakthroughs or highlights of the manuscript. 
-  Authors can write one or two sentences to describe 
-  the most important part of the paper.
-
-# for the journal Encyclopedia
-encyclopediadef: |
-  For entry manuscripts only: please provide a brief overview
-  of the entry title instead of an abstract.
-entrylink: The Link to this entry published on the encyclopedia platform.
-
-# for the journal Advances in Respiratory Medicine
-# add highlights
-addhighlights: |
-  This is an obligatory section in “Advances in Respiratory Medicine”, 
-  whose goal is to increase the discoverability and readability of the
-  article via search engines and other scholars. Highlights should not 
-  be a copy of the abstract, but a simple text allowing the reader to 
-  quickly and simplified find out what the article is about and what can 
-  be cited from it. Each of these parts should be devoted up to 2~bullet 
-  points.
-
+```{r extraccion_dataset_csv}
+ruta_csv <- "data/ECEPOVadultos_2021.csv"
+df_1 <- read_delim("data/ECEPOVadultos_2021.csv", 
+    delim = "\t", escape_double = FALSE, 
+    col_types = cols(ESTUDIOS = col_double(), 
+        CAMPO = col_double()), trim_ws = TRUE)
 ```
 
-\startlandscape
-```{r, mdpinames, echo=FALSE, results='asis'}
-mdpi_journals <- "acoustics, actuators, addictions, admsci, adolescents, aerobiology, aerospace, agriculture, agriengineering, agrochemicals, agronomy, ai, air, algorithms, allergies, alloys, analytica, analytics, anatomia, animals, antibiotics, antibodies, antioxidants, applbiosci, appliedchem, appliedmath, applmech, applmicrobiol, applnano, applsci, aquacj, architecture, arm, arthropoda, arts, asc, asi, astronomy, atmosphere, atoms, audiolres, automation, axioms, bacteria, batteries, bdcc, behavsci, beverages, biochem, bioengineering, biologics, biology, biomass, biomechanics, biomed, biomedicines, biomedinformatics, biomimetics, biomolecules, biophysica, biosensors, biotech, birds, bloods, blsf, brainsci, breath, buildings, businesses, cancers, carbon, cardiogenetics, catalysts, cells, ceramics, challenges, chemengineering, chemistry, chemosensors, chemproc, children, chips, cimb, civileng, cleantechnol, climate, clinpract, clockssleep, cmd, coasts, coatings, colloids, colorants, commodities, compounds, computation, computers, condensedmatter, conservation, constrmater, cosmetics, covid, crops, cryptography, crystals, csmf, ctn, curroncol, cyber, dairy, data, ddc, dentistry, dermato, dermatopathology, designs, devices, diabetology, diagnostics, dietetics, digital, disabilities, diseases, diversity, dna, drones, dynamics, earth, ebj, ecologies, econometrics, economies, education, ejihpe, electricity, electrochem, electronicmat, electronics, encyclopedia, endocrines, energies, eng, engproc, entomology, entropy, environments, environsciproc, epidemiologia, epigenomes, est, fermentation, fibers, fintech, fire, fishes, fluids, foods, forecasting, forensicsci, forests, foundations, fractalfract, fuels, future, futureinternet, futurepharmacol, futurephys, futuretransp, galaxies, games, gases, gastroent, gastrointestdisord, gels, genealogy, genes, geographies, geohazards, geomatics, geosciences, geotechnics, geriatrics, grasses, gucdd, hazardousmatters, healthcare, hearts, hemato, hematolrep, heritage, higheredu, highthroughput, histories, horticulturae, hospitals, humanities, humans, hydrobiology, hydrogen, hydrology, hygiene, idr, ijerph, ijfs, ijgi, ijms, ijns, ijpb, ijtm, ijtpp, ime, immuno, informatics, information, infrastructures, inorganics, insects, instruments, inventions, iot, j, jal, jcdd, jcm, jcp, jcs, jcto, jdb, jeta, jfb, jfmk, jimaging, jintelligence, jlpea, jmmp, jmp, jmse, jne, jnt, jof, joitmc, jor, journalmedia, jox, jpm, jrfm, jsan, jtaer, jvd, jzbg, kidneydial, kinasesphosphatases, knowledge, land, languages, laws, life, liquids, literature, livers, logics, logistics, lubricants, lymphatics, machines, macromol, magnetism, magnetochemistry, make, marinedrugs, materials, materproc, mathematics, mca, measurements, medicina, medicines, medsci, membranes, merits, metabolites, metals, meteorology, methane, metrology, micro, microarrays, microbiolres, micromachines, microorganisms, microplastics, minerals, mining, modelling, molbank, molecules, mps, msf, mti, muscles, nanoenergyadv, nanomanufacturing, nanomaterials, ncrna, ndt, network, neuroglia, neurolint, neurosci, nitrogen, notspecified, nri, nursrep, nutraceuticals, nutrients, obesities, oceans, ohbm, onco, oncopathology, optics, oral, organics, organoids, osteology, oxygen, parasites, parasitologia, particles, pathogens, pathophysiology, pediatrrep, pharmaceuticals, pharmaceutics, pharmacoepidemiology, pharmacy, philosophies, photochem, photonics, phycology, physchem, physics, physiologia, plants, plasma, platforms, pollutants, polymers, polysaccharides, poultry, powders, preprints, proceedings, processes, prosthesis, proteomes, psf, psych, psychiatryint, psychoactives, publications, quantumrep, quaternary, qubs, radiation, reactions, receptors, recycling, regeneration, religions, remotesensing, reports, reprodmed, resources, rheumato, risks, robotics, ruminants, safety, sci, scipharm, sclerosis, seeds, sensors, separations, sexes, signals, sinusitis, skins, smartcities, sna, societies, socsci, software, soilsystems, solar, solids, spectroscj, sports, standards, stats, std, stresses, surfaces, surgeries, suschem, sustainability, symmetry, synbio, systems, targets, taxonomy, technologies, telecom, test, textiles, thalassrep, thermo, tomography, tourismhosp, toxics, toxins, transplantology, transportation, traumacare, traumas, tropicalmed, universe, urbansci, uro, vaccines, vehicles, venereology, vetsci, vibration, virtualworlds, viruses, vision, waste, water, wem, wevj, wind, women, world, youth, zoonoticdis"
-
-knitr::kable(rticles::string_to_table(mdpi_journals, 8),
-             col.names = NULL,
-             format = "latex",
-             booktabs = TRUE, 
-             caption = "MDPI journal names.",
-             longtable = TRUE)
-
-```
-\finishlandscape
-
-
-
-
-# Introduction
-
-The introduction should briefly place the study in a broad context and highlight
-why it is important. It should define the purpose of the work and its
-significance. The current state of the research field should be reviewed
-carefully and key publications cited. Please highlight controversial and
-diverging hypotheses when necessary. Finally, briefly mention the main aim of
-the work and highlight the principal conclusions. As far as possible, please
-keep the introduction comprehensible to scientists outside your particular
-field of research. Citing a journal paper [@bertrand-krajewski_distribution_1998;
-@leutnant_stormwater_2016]. And now citing a book reference @gujer_systems_2008.
-Some MDPI journals use Chicago and others use APA, this template should choose
-the correct citation format for you once you specify the journal in the YAML
-header.
-
-To use endnotes, change `endnotes: true` in the YAML header, then use
-`\endnote{This is an endnote.}`.
-
-
-# Materials and Methods
-
-Materials and Methods should be described with sufficient details to allow 
-others to replicate and build on published results. Please note that publication 
-of your manuscript implicates that you must make all materials, data, computer 
-code, and protocols associated with the publication available to readers. Please
-disclose at the submission stage any restrictions on the availability of 
-materials or information. New methods and protocols should be described in 
-detail while well-established methods can be briefly described and appropriately
-cited.
-
-Research manuscripts reporting large datasets that are deposited in a publicly 
-available database should specify where the data have been deposited and provide
-the relevant accession numbers. If the accession numbers have not yet been
-obtained at the time of submission, please state that they will be provided
-during review. They must be provided prior to publication.
-
-Interventionary studies involving animals or humans, and other studies require
-ethical approval must list the authority that provided approval and the
-corresponding ethical approval code.
-
-# Results
-
-This section may be divided by subheadings. It should provide a concise and
-precise description of the experimental results, their interpretation as well
-as the experimental conclusions that can be drawn.
-
-## Subsection Heading Here
-
-Subsection text here.
-
-### Subsubsection Heading Here
-
-Bulleted lists look like this:
-
-* First bullet
-* Second bullet
-* Third bullet
-
-Numbered lists can be added as follows:
-
-1. First item
-2. Second item
-3. Third item
-
-The text continues here.
-
-## Figures, Tables and Schemes
-
-All figures and tables should be cited in the main text as Figure \ref{fig:fig1}, 
-\ref{tab:tab1}, etc. To get cross-reference to figure generated by R chunks 
-include the `\\label{}` tag in the `fig.cap` attribute of the R chunk: 
-`fig.cap = "Fancy Caption\\label{fig:plot}"`.
-
-```{r fig1, echo=FALSE, fig.width=3, fig.cap="A figure added with a code chunk.\\label{fig:fig1}"}
-x = rnorm(10)
-y = rnorm(10)
-plot(x, y)
-```
-
-
-When making tables using `kable`, it is suggested to use
-the `format="latex"` and `tabl.envir="table"` arguments
-to ensure table numbering and compatibility with the mdpi
-document class.
-
-```{r tab1, echo=FALSE}
-knitr::kable(mtcars[1:5, 1:3], format = "latex", 
-             booktabs = TRUE, 
-             caption = "This is a table caption. Tables should be placed in the 
-             main text near to the first time they are~cited.", 
-             align = 'ccc', centering = FALSE,
-             table.envir = "table", position = "H")
-```
-
-
-
-For a very wide table, landscape layouts are allowed.
-
-
-\startlandscape
-
-```{r tab2, echo=FALSE}
-df <- data.frame(`Title 1` = c("Entry 1", "Entry 2"),
-                 `Title 2` = c("Data", "Data"),
-                 `Title 3` = c("Data", "Data"),
-                 `Title 4` = c("This cell has some longer content that runs over
-                               two lines",
-                               "Data"))
-knitr::kable(df, format = "latex", 
-             booktabs = TRUE, 
-             caption = "This is a very wide table", 
-             align = 'ccc', centering = FALSE,
-             table.envir = "table", position = "H")
-```
-
-\finishlandscape
-
-## Formatting of Mathematical Components
-
-This is an example of an equation:
-
-$$
-a = 1.
-$$
-
-If you want numbered equations use Latex and wrap in the equation environment:
-
-\begin{equation}
-a = 1,
-\end{equation}
-
-the text following an equation need not be a new paragraph. Please punctuate 
-equations as regular text.
-
-```{comment}
-If the documentclass option "submit" is chosen, please insert a blank line before and after any math environment (equation and eqnarray environments). This ensures correct linenumbering. The blank line should be removed when the documentclass option is changed to "accept" because the text following an equation should not be a new paragraph.
-```
-
-This is the example 2 of equation:
-
-\begin{adjustwidth}{-\extralength}{0cm}
-\begin{equation}
-a = b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + r + s + t + 
-u + v + w + x + y + z
-\end{equation}
-\end{adjustwidth}
-
-Theorem-type environments (including propositions, lemmas, corollaries etc.) 
-can be formatted as follows:
-
-Example of a theorem:
-
-::: {.Theorem latex=true}
-Example text of a theorem
-:::
-
-The text continues here. Proofs must be formatted as follows:
-
-Example of a proof:
-
-::: {.proof latex="[Proof of Theorem1]"}
-Text of the proof. Note that the phrase ``of Theorem 1'' is optional if it is 
-clear which theorem is being referred to.
-:::
-
-The text continues here.
-
-# Discussion
-
-Authors should discuss the results and how they can be interpreted in 
-perspective of previous studies and of the working hypotheses. The findings and 
-their implications should be discussed in the broadest context possible. Future 
-research directions may also be highlighted.
-
-# Conclusion
-
-This section is not mandatory, but can be added to the manuscript if the
-discussion is unusually long or complex.
-
-# Patents
-
-This section is not mandatory, but may be added if there are patents resulting
-from the work reported in this manuscript.
-
-
-```{r}
-library(stringr)
-library(readxl)
-library(readr)
-library(tidyr)
-library(dplyr)
-library(visdat)
-
-# Para la función aggr de la sección de características del dataset
-library('VIM')
-library("colorspace")
-library('grid')
-```
-
-```{r}
+```{r lectura_dataset_readLines, eval = FALSE}
 ruta_txt <- "./data/md_ECEPOVadultos_2021.txt"
 lines <- readLines(ruta_txt)
 
-#set.seed(33)
-#conjunto_aleatorio <- sample(lines, 10000)
-```
-
-```{r}
-ruta_excel <- "data/dr_ECEPOVadultos_2021.xlsx"
-excel_info <- read_excel(ruta_excel, sheet = "Diseño", range = "A2:H50", col_names = TRUE)
-Tablas1 <- read_excel(ruta_excel, sheet = "Tablas1", range = "A4:C63", col_names = TRUE)
-Tablas2 <- read_excel(ruta_excel, sheet = "Tablas2", range = "A4:C112", col_names = TRUE)
-Tablas3 <- read_excel(ruta_excel, sheet = "Tablas3", range = "A4:C48", col_names = TRUE)
-```
-
-```{r}
-# Función para sacar las subcadenas en cada línea
+# Función para sacar las subcadenas en cada línea del .txt
 
 extract_substrings <- function(line, start_position, length) {
   substrings <- character(length(start_position))
@@ -405,46 +97,66 @@ extract_substrings <- function(line, start_position, length) {
 # Guardaremos las substrings en una matriz por eficiencia computacional
 
 num_lines <- length(lines)
-num_variables <- length(excel_info$Variable)
+num_variables <- length(excel_info_1$Variable)
 substring_matrix <- matrix("", nrow = num_lines, ncol = num_variables)
 
 # Extraer las subcadenas para todas las líneas y guardarlas en las filas de la matriz
 
 for (i in 1:num_lines) {
-  substring_matrix[i, ] <- extract_substrings(lines[i], excel_info$Posición, excel_info$Longitud)
+  substring_matrix[i, ] <- extract_substrings(lines[i], excel_info_1$Posición, excel_info_1$Longitud)
 }
 
 # Conversión al dataframe desde la matriz
 
-df <- as.data.frame(substring_matrix)
-colnames(df) <- excel_info$Variable
+df_1 <- as.data.frame(substring_matrix)
+colnames(df_1) <- excel_info_1$Variable
 
 ```
 
-```{r}
+```{r lectura_diseno}
+ruta_excel <- "data/dr_ECEPOVadultos_2021.xlsx"
+excel_info_1 <- read_excel(ruta_excel, sheet = "Diseño", range = "A2:H50", col_names = TRUE)
+
+# Almacenamiento de distintas hojas del excel para optimizar el código
+Tablas1 <- read_excel(ruta_excel, sheet = "Tablas1", range = "A4:C63", col_names = TRUE)
+Tablas2 <- read_excel(ruta_excel, sheet = "Tablas2", range = "A4:C112", col_names = TRUE)
+Tablas3 <- read_excel(ruta_excel, sheet = "Tablas3", range = "A4:C48", col_names = TRUE)
+```
+
+
+A pesar de que fue de gran utilidad el fichero que ofrecía INE para la transformación de las variables a un tipo correcto, aparecieron algunos fallos que tuvimos que solventar de manera manual. Determinadas variables no fueron bien codificadas por parte de INE, de tal forma que hubo que modificar ligeramente el fichero .xlsx. Concretamente, fue en algunos *diccionarios* de variables en los que no terminaba de estar correctamente bien determinado el *código* (lo que sería el level en un factor). El error presentado (en algunas variables) consistía, básicamente, en que aparecía "01" en lugar de "1" (para otros números similar), valor recogido en las observaciones.
+
+```{r conversion_dataset}
 # Cambio manual por datos mal introducidos "2 " --> "2" para la posterior lectura con el diccionario
 
 manual_change <- c("ESTUDIOS", "CAMPO", "NDESPLA", "MTRANSPOR_1", "MTRANSPOR_2")
 
-df <- df %>%
+df_1 <- df_1 %>%
   mutate(across(all_of(manual_change), ~ str_remove_all(., " ")))
 
-# Conversión de las variables correspondientes a tipo numérico
+# Codificamos los NA de la variable NHIJOS como 0, ya que nos será útil más tarde esta interpretación
 
-dic_tipo <- excel_info$Tipo
+df_1 <- df_1 %>%
+  mutate(NHIJOS = ifelse(is.na(NHIJOS), 0, NHIJOS))
 
-df <- df %>%
+# Conversión de las variables correspondientes a tipo numérico según indica INE
+
+dic_tipo <- excel_info_1$Tipo
+
+df_1 <- df_1 %>%
   mutate(across(which(dic_tipo == "N"), as.numeric)) %>%
   mutate()
 
-# Transformación a factores de las variables pertinentes
+# Transformación a factores de las variables pertinentes usando el fichero que ofrece INE
 
-excel_dic <- excel_info %>%
+excel_dic <- excel_info_1 %>%
   filter(!is.na(`Diccionario de la variable`))
 
 dic_vars <- excel_dic$Variable
 dic_var <- excel_dic$`Diccionario de la variable`
 dic_table <- excel_dic$`Diccionario ubicado en la hoja…`
+
+## bucle donde se irán convirtiendo a factor de manera iterativa aquellas variables que nos indique el fichero del INE
 
 for (i in seq_along(dic_vars)) {
   
@@ -462,123 +174,369 @@ for (i in seq_along(dic_vars)) {
     levels <- df_table[(fila_start + 2):fila_end, columna_start]
     labels <- df_table[(fila_start + 2):fila_end, columna_start + 1]
     
+    # conversión a tipo vector para aplicar debajo factor()
     levels <- unlist(levels[[1]])
     labels <- unlist(labels[[1]])
   }
   
-  df <- df %>%
-      mutate_at(vars(dic_vars[i]), ~factor(., levels = levels, labels = labels))
-}
-
-```
-
-### Descripción del daset
-
-Descripción del dataset(fuente y año y demás información)
-
-
-Se tiene que el número de instancias es de 361934 y el de atributos de 48. 
-
-#### Elección de las variables de interés
-
-Puesto que 48 son demasiadas variables, se ha decidido hacer una selección de las variables de mayor interés. De este modo, será posible obtener gráficos más claros y entendibles para el lector.
-
-Las variables de interese seleccionadas han sido:
-
-+ **IDQ_PV**: Código de la provincia de residencia.
-+ **TAM_MUNI**: Tamaño del municipio.
-+ **EC**: Estado civil legal.
-+ **EDADEC**: Edad de adquisición del estado civil legal.
-+ **ESTUDIOS**: Nivel de estudios alcanzado.
-+ **ANOESTUD**: Año que alcanzó su mayor nivel de estudios.
-+ **EDADESTUD**: Edad a la que alcanzó su mayor nivel de estudios.
-+ **CAMPO**: Campo de los estuidos.
-+ **SITLAB**: Situación laboral durante la última semana.
-+ **SATISTIEMP**: Grado de satisfacción en el tiempo de desplazamiento al trabajo.
-+ **COMPRAINT**: Realización de compras por internet en el último mes.
-+ **HIJOS**: Tenencia de hijos.
-+ **NHIJOS**: Número total de hijos.
-+ **TDOMEST**: Grado de participación en las tareas domésticas del hogar.
-
-```{r include=FALSE}
-df_reducido <- df[,c("IDQ_PV", "TAM_MUNI", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "SATISTIEMP", "COMPRAINT", "HIJOS", "NHIJOS", "TDOMEST")]
-```
-
-### Características generales del dataset reducido
-
-Previamente al empleo de técnicas de visualización de los datos es importante conocer las características del dataset con el que se está tratando. Así como conocer los tipos de las variables, los diferentes valores que puede tomar cada variables, la existencia de niveles y factoes dentro de las variables o la existencia de NAs en las variables.
-
-En primer lugar, emplearemos la función *glimpse* de la librería *dplyr* para obtener una primera impresión del dataset. Mediante esta función se obtiene el tipo de los datos y los primeros valores de cada columna del dataset.
-
-```{r}
-glimpse(df_reducido, width = 70) # El parámetro width sirve para elegir la longitud de los datos a mostrar (util para que no quede feo en el pdf)
-```
-Seguidamente, mediante la función *summary* obtenemos información acerca de las características de cada columna del dataset.
-
-```{r}
-summary(df_reducido)
-```
-
-En el caso de columnas de tipo numerico, como por ejemplo EDADEC o ANOESTUD. Se han obtenido estadísticos básicos como son el mínimo, el máximo, la mediana, la media y el primer y tercer cuartil. En cambio, en el caso de las columnas de tipo caracter, como por ejemplo IDQ_PV o TAM_MUNI. Se han obtenido las frecuencias de cada uno de los caracteres en su correspondiente columna. Además, mediante la funció *summary* también se obtiene la cantidad de NA's en cada una de las columnas.
-
-En tercer lugar, se ha generado una tabla de gran utilidad para identificar las variables que son de tipo factor y las que tienen diferentes niveles en sus datos. Además también es posible obtener el valor del nivel más alto y su frecuencia de aparición. Por último, en la tabla también quedan representados las cantidad de NAs así como el porcentaje de los datos que representan dicha cantidad de NAs.
-
-```{r include=FALSE}
-SumarioDatos<-function(data=data,digitos=3)
-{
-  
-  type<-sapply(data,class)
-  levels<-sapply(data,function(x){length(unique(x))})
-  topLevel<-sapply(data,
-                   function(x){t<-table(x)
-                   colnames(t(which.max(t)))})
-  topCount<-sapply(data,function(x){max(table(x))})
-  topFrac<-sapply(data,function(x,digitos){t<-table(x)
-  (max(t)/sum(t))}) %>%round(digits=digitos)
-  missFreq<-sapply(data,function(x){sum(is.na(x)==TRUE)})
-  missFrac<-sapply(data,function(x){sum(is.na(x)==TRUE)/length(x)}) %>%
-    round(digits=digitos)
-  
-  sumario<-data.frame(variable=colnames(data),type=type,levels=levels,topLevel=topLevel,
-                      topCount=topCount,topFrac=topFrac,missFreq=missFreq,missFrac=missFrac)
-  
-  rownames(sumario)<-NULL
-  sumario
+  df_1 <- df_1 %>%
+      mutate_at(vars(dic_vars[i]), ~factor(., levels = levels, labels = labels)) 
 }
 ```
 
-```{r}
-print(SumarioDatos(data=df_reducido))
+Una vez está hecha la conversión del dataset que contaba con un mayor número de variables procedemos a hacer una unión con el otro mencionado anteriormente, solo utilizando algunas variables de interés como SEXO o EDAD.
+
+
+```{r seleccion_columnas}
+columnas_a_leer <- c("IDEN", "NPV", "FACTOR", "SEXO", "EDAD", "NACIM", "PNACIM")
+df_2 <- read_dta("./data/ECEPOVhogar_2021.dta", col_select = columnas_a_leer)
 ```
 
-En cuarto lugar, para finalizar con las características del dataset. Se ha generado el siguiente gráfico haciendo uso de la función *aggr* de la librería *VIM*. Mediante ella es posible representar visualmente la candidad de NAs en el dataset. Y, además permite analizar la distribución de los valores faltantes en diferentes variables y combinaciones.
+Las variables SEXO, NACIM y PNACIM de este nuevo dataset deben ser convertidas a sus tipos correctos, por lo que se hace uso de la información que proporciona INE sobre las variables.
 
-```{r}
-aggr(df_reducido, prop = FALSE, combined = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE)[2]
+```{r lectura_diseno_2}
+ruta_excel_2 <- "data/dr_ECEPOVhogar_2021.xlsx"
+excel_info_2 <- read_excel(ruta_excel_2, sheet = "Diseño", range = "A2:H162", col_names = TRUE)
+
+# Cogemos los diccionarios manualmente puesto que solo tenemos 3 variables y el proceso es más eficiente en lectura
+
+T_SEXO <- read_excel(ruta_excel_2, sheet = "Tablas2", range = "A6:B8", col_names = TRUE)
+T_NACIM <- read_excel(ruta_excel_2, sheet = "Tablas2", range = "A26:B28", col_names = TRUE)
+T_PAIS <- read_excel(ruta_excel_2, sheet = "Tablas1", range = "A74:B276", col_names = TRUE)
 ```
 
-# Analisis univariante
+```{r conversion_dataset_2}
+df_2 <- df_2 %>%
+  mutate(SEXO = factor(SEXO, levels = T_SEXO$Código, labels = T_SEXO$Descripción)) %>%
+  mutate(NACIM = factor(NACIM, levels = T_NACIM$Código, labels = T_NACIM$Descripción)) %>%
+  mutate(PNACIM = factor(PNACIM, levels = T_PAIS$Código, labels = T_PAIS$Descripción))
+```
+
+Hacemos el merge utilizando las variables de identificación IDEN, NPV y FACTOR, de tal manera que podamos establecer una relación unívoca entre los adultos presentes en el primer y segundo dataset.
+
+```{r union_datasets}
+df_merged <- merge(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "NACIM", "PNACIM")], by = c("IDEN", "NPV", "FACTOR"), all.x = TRUE)
+```
+
+## Características generales de los datos
+
+Podemos hacernos una idea rápida de cuáles son los datos pertenecientes a nuestro dataframe, *df*, haciendo uso de la función glimpse, perteneciente a la librería dplyr. 
+
+```{r glimpse}
+dplyr::glimpse(df_merged, width = 60)
+```
+
+Observamos que es un dataset con total de 361934 observaciones y con 52 variables, lo cual es mucho más de lo que necesitaremos.
+
+Tras un análisis de las variables en *dr_ECEPOVadultos_2021.xlsx* y  
+*dr_ECEPOVhogar_2021.xlsx*, consideramos que muchas de las variables no nos otorgarán interés para el análisis que particularmente nosotros deseamos aplicar, por lo que seleccionaremos aquellas relevantes.
 
 
-# Analisis multivariante
+```{r variables_usadas, include = T}
+data_info <- data.frame(
+  Variable = c(
+    "IDQ_PV", "TAM_MUNI", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD",
+    "EDADESTUD", "CAMPO", "SITLAB", "SATISTIEMP", "COMPRAINT", "HIJOS",
+    "NHIJOS", "TDOMEST", "SEXO", "EDAD", "NACIM", "PNACIM"
+  ),
+  Descripción = c(
+    "Código de la provincia de residencia.",
+    "Tamaño del municipio.",
+    "Estado civil legal.",
+    "Edad de adquisición del estado civil legal.",
+    "Nivel de estudios alcanzado.",
+    "Año que alcanzó su mayor nivel de estudios.",
+    "Edad a la que alcanzó su mayor nivel de estudios.",
+    "Campo de los estudios.",
+    "Situación laboral durante la última semana.",
+    "Grado de satisfacción en el tiempo de desplazamiento al trabajo.",
+    "Realización de compras por internet en el último mes.",
+    "Tenencia de hijos.",
+    "Número total de hijos.",
+    "Grado de participación en las tareas domésticas del hogar.",
+    "Sexo de la persona.",
+    "Edad de la persona.",
+    "Lugar de nacimiento de la persona (España u otro sitio).",
+    "País de nacimiento exacto de la persona."
+  )
+)
 
+knitr::kable(data_info, format = "latex",
+             booktabs = TRUE, 
+             caption = "Variables de interés para el estudio.", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table", position = "H")
+```
 
-# Detección de anomalias
-En esta sección, se eliminan valores NA y se tratan los outliers. En primer lugar, se visualiza donde se encuentran los valores faltantes
+```{r seleccion_variables}
+var_interes <- c("IDQ_PV", "TAM_MUNI", "SEXO", "EDAD", "NACIM", "PNACIM", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "SATISTIEMP", "COMPRAINT", "NHIJOS", "HIJOS", "TDOMEST")
+  
+df <- df_merged %>%
+  dplyr::select(var_interes)
+```
 
+```{r glimpse_reducido}
+glimpse(df, width = 60)
+```
+
+Seguidamente, mediante la función *summary* obtenemos información acerca de las características de cada columna del dataset. 
+
+```{r summary}
+summary(df)
+```
+
+Una modificación de la función summary que incluye algo menos de información, pero que nos será útil al no haber tanta saturación aparece a continuación.
+
+```{r funcion_sumario, include = FALSE}
+SumarioDatos <- function(data = data, digitos = 3, max_topLevel_length = 47) {
+  type <- sapply(data, class)
+  levels <- sapply(data, function(x) { length(unique(x)) })
+  topLevel <- sapply(data, function(x) {
+    t <- table(x)
+    colnames(t(which.max(t)))
+  })
+
+  # Truncate topLevel and add "..." if it exceeds the maximum length
+  topLevel <- ifelse(nchar(topLevel) > max_topLevel_length, paste0(substr(topLevel, 1, max_topLevel_length - 3), "..."), topLevel)
+
+  topCount <- sapply(data, function(x) { max(table(x)) })
+  topFrac <- sapply(data, function(x, digitos) {
+    t <- table(x)
+    (max(t) / sum(t))
+  }) %>% round(digits = digitos)
+
+  missFrac <- sapply(data, function(x) { sum(is.na(x) == TRUE) / length(x) }) %>%
+    round(digits = digitos)
+
+  sumario <- data.frame(
+    variable = colnames(data),
+    type = type,
+    levels = levels,
+    topLevel = topLevel,
+    topCount = topCount,
+    topFrac = topFrac,
+    missFrac = missFrac
+  )
+
+  rownames(sumario) <- NULL
+  return(sumario)
+}
+```
+
+```{r kable_sumario, include = T}
+kable_res <- knitr::kable(SumarioDatos(data = df), format = "latex",
+             booktabs = TRUE, 
+             caption = "Información relevante acerca de las variables de estudio.", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table", position = "H",
+             tabular.environment = "tabularx")
+
+kable_styling(kable_res, font_size = 7, position = "left")
+```
+
+### Datos faltantes
+
+Una representación precisa de cómo se distribuyen los *missing values* por nuestro conjunto de datos lo otorga la librería *VIM* con la función *aggr*. Se han representado solamente aquellas variables que cuentan con algún NA para facilitar la visualización. En el siguiente gráfico puede observarse tanto la proporción total de valores faltantes en dichas variables individualmente (izquierda), como una serie de combinaciones posibles entre ellas de valores faltantes. 
+
+Así, encontramos por ejemplo que la combinación de NA en (SATISTIEMP, ANOESTUD, EDADESTUD, CAMPO) cuenta con una proporción del 26.49 % de los datos totales.
+
+```{r missing_values, include = T, fig.width = 5.8, fig.height = 4, fig.align = "left"}
+aggr_result <- capture.output({
+  df %>%
+    select_if(~ anyNA(.)) %>%
+    aggr(prop = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE, cex.axis = 0.6, cex.lab = 0.7, digits = 1, gap = 2, cex.numbers = 0.6, plot = TRUE)
+})
+
+# Mostrar solo el plot sin el data.frame para el Rmd
+invisible(aggr_result)
+```
+# Exploración inicial / visualización
+
+Una vez hemos asegurado que nuestros datos estén en la estructura de data.frame, tengan valores correctamente etiquetados y estén almacenados con el tipo correcto, podemos empezar a buscar posibles patrones en las instancias o entre las características.
+
+## Análisis univariante.
+
+Distinguiremos el análisis entre las variables de tipo numérico y las de tipo categórica (factor) presentes, ya que ciertos estadísticos descriptivos (como por ejemplo la media) carecen de sentido en las pertenecientes al último tipo.
+
+### Variables de tipo numérico
+
+```{r summarise_numeric}
+df_sumnum <- df %>%
+  select_if(is.numeric) %>%
+  summarise_all(list(
+    Media = ~round(mean(., na.rm = TRUE), 2), 
+    Mediana = ~round(median(., na.rm = TRUE), 2),
+    DesvEst = ~round(sd(., na.rm = TRUE), 2),
+    Asimetria = ~round(skewness(., na.rm = TRUE), 2),
+    Curtosis = ~round(kurtosis(., na.rm = TRUE), 2)
+  )) %>%
+  pivot_longer(cols = everything()) %>%
+  tidyr::separate(col = name, into = c("Variable", "Estadístico")) %>%
+  pivot_wider(names_from = "Estadístico", values_from = "value")
+```
+
+```{r kable_summarise_numeric, include = TRUE}
+kable_sumnum <- knitr::kable(df_sumnum, format = "latex",
+             booktabs = TRUE, 
+             caption = "Estadísticos de variables numéricas", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table", position = "H",
+             tabular.environment = "tabularx")
+
+kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRUE)
+```
+
+Pasamos a hacer una visualización de estas variables.
+
+```{r edad_by_sexo}
+p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
+  geom_freqpoly(binwidth = 1) +
+  labs(
+    title = "Distribución de edades en la encuesta",
+    x = "Edad / años",
+    y = "Frecuencia"
+  ) +
+  scale_color_manual(values = c("Hombre" = "blue", "Mujer" = "red")) +
+  theme_minimal() +
+  scale_x_continuous(breaks = seq(15, 120, by = 10))
+
+p_edad
+```
 ```{r}
-col_na <- sapply(df, function(x) any(is.na(x)))
+# Calcular la media y la desviación estándar de la variable "EDAD"
 
-col_factor_na <- col_na & sapply(df, is.factor)
-col_numeric_na <-col_na & sapply(df, is.numeric)
-col_char_na <- col_na & sapply(df, is.character)
+media_edad <- mean(df$EDAD)
+desviacion_edad <- sd(df$EDAD)
 
-print(paste("El numero de columnas con NA de tipo factor es de ",sum(col_factor_na)))
-print(paste("El numero de columnas con NA de tipo numerico es de ",sum(col_numeric_na)))
-print(paste("El numero de columnas con NA de tipo caracter es de ",sum(col_char_na)))
+# Crear el histograma de densidad y superponer la curva gaussiana
 
+p_edad_histogram_density <- ggplot(df, aes(x = EDAD)) +
+  geom_histogram(aes(y = after_stat(density)), binwidth = 1, fill = "lightblue", color = "black") +
+  labs(
+    title = "Distribución de edades en la encuesta",
+    x = "Edad / años",
+    y = "Densidad"
+  ) +
+  theme_minimal() +
+  scale_x_continuous(breaks = seq(15, 120, by = 10)) +
+  
+  # Superponer la curva gaussiana 
+  
+  stat_function(
+    fun = dnorm,  # Función de densidad de probabilidad normal
+    args = list(mean = media_edad, sd = desviacion_edad),
+    color = "red",
+    size = 1
+  )
+
+p_edad_histogram_density
+```
+```{r}
+# Crea un QQ plot para la variable "EDAD"
+
+qqplot_edad <- ggplot(df, aes(sample = EDAD, color = SEXO)) +
+  stat_qq() +
+  stat_qq_line() +
+  ggtitle("QQ Plot para la variable EDAD") +
+  xlab("Cuantiles teóricos") +
+  ylab("Cuantiles observados")
+
+qqplot_edad
+```
+
+https://ggplot2.tidyverse.org/reference/geom_qq.html
+
+```{r numhijos_by_nacionalidad_separado}
+df_espana <- df %>%
+  filter(NACIM == "España") %>%
+  group_by(NHIJOS) %>%
+  summarize(RelativeFrequency = n() / nrow(.))
+
+df_otro_pais <- df %>%
+  filter(NACIM == "Otro país") %>%
+  group_by(NHIJOS) %>%
+  summarize(RelativeFrequency = n() / nrow(.))
+
+y_limits <- range(0, max(max(df_espana$RelativeFrequency), max(df_otro_pais$RelativeFrequency)))
+
+p_numhijos_espana <- ggplot(df_espana, aes(x = NHIJOS, y = RelativeFrequency)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(
+    title = "Número de hijos (España)",
+    x = "Número de Hijos",
+    y = "Frecuencia Relativa"
+  ) +
+  coord_cartesian(ylim = y_limits) +  
+  theme_minimal()
+
+p_numhijos_otro_pais <- ggplot(df_otro_pais, aes(x = NHIJOS, y = RelativeFrequency)) +
+  geom_bar(stat = "identity", fill = "red") +
+  labs(
+    title = "Número de hijos (Otro país)",
+    x = "Número de Hijos",
+    y = "Frecuencia Relativa"
+  ) +
+  coord_cartesian(ylim = y_limits) +  
+  theme_minimal()
+
+
+grid.arrange(p_numhijos_espana, p_numhijos_otro_pais, ncol = 2)
 
 ```
 
+```{r numhijos_by_nacionalidad_junto}
+# Cálculo de frecuencias relativas para cada grupo
+
+df_grouped <- df %>%
+  group_by(NACIM, NHIJOS) %>%
+  summarize(RelativeFrequency = n() / nrow(df[df$NACIM == NACIM, ]))
+
+# Gráfico conjunto
+
+p_numhijos_merged <- ggplot(df_grouped, aes(x = NHIJOS, y = RelativeFrequency, fill = NACIM)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Distribución del número de hijos por nacionalidad",
+    x = "Número de Hijos",
+    y = "Frecuencia Relativa"
+  ) +
+  scale_fill_manual(values = c("España" = "blue", "Otro país" = "red")) +
+  theme_minimal()
+
+p_numhijos_merged
+```
+
+```{r numhijos_by_nacionalidad_boxplot}
+p_boxplot_nacim <- ggplot(df, aes(x = NACIM, y = NHIJOS, fill = NACIM)) +
+  geom_boxplot(coef = 1.5, outlier.colour = "orange") +
+  labs(
+    title = "Número de hijos por nacionalidad",
+    x = "Nacionalidad",
+    y = "Número de hijos"
+  ) +
+  scale_fill_manual(values = c("España" = "blue", "Otro país" = "red")) +
+  theme_minimal()
+
+p_boxplot_nacim
+```
+Podemos observar que hay múltiples outliers, como consecuencia de que la inmensa mayoría de la gente suele estar dentro del rango intercuartílico para el número de hijos, siendo muy raro tener 6 hijos o más. Un tratamiento más riguroso para detectar las anomalías se realizará posteriormente.
+
+### Variables de tipo categórico
+
+
+
+
+
+
+
+```{r anadir_luego}
+df %>%
+  filter(is.na(NHIJOS) & HIJOS == "Sí")
+
+df %>%
+  filter(!is.na(NHIJOS) & HIJOS == "No")
+```
+
+Nota: meter mapa por provincias.
 
 
