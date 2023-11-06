@@ -444,7 +444,7 @@ qqplot_edad <- ggplot(df, aes(sample = EDAD, color = SEXO)) +
 qqplot_edad
 ```
 
-Añadir histograma con distribución gaussiana superpuesta? gráfico qq plot?
+https://ggplot2.tidyverse.org/reference/geom_qq.html
 
 ```{r numhijos_by_nacionalidad_separado}
 df_espana <- df %>%
