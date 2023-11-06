@@ -47,7 +47,7 @@ output:
 
 # Introducción.
 
-El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nacional de Estadística (INE). En concreto, pertenece a una encuesta realizada a la población en el año 2021 que tiene como propósito el proporcionar información detallada sobre personas, viviendas y edificios que no puede obtenerse a través de registros administrativos. En nuestro caso, hemos decidido hacer la exploración en su mayoría de la parte relacionada a cuestiones que se les hizo a adultos (personas de 16 años o más). Para agregar más variables de interés se escogieron algunas de otro conjunto de datos, también de esta encuesta, hecho a todos los integrantes de la vivienda y no solo a adultos. El enlace a los ficheros de microdatos está presente [aquí](https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177092&menu=resultados&idp=1254735572981#!tabs-1254736195790).
+El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nacional de Estadística (INE). En concreto, pertenece a una encuesta realizada a la población en el año 2021 que tiene como propósito el proporcionar información detallada sobre personas, viviendas y edificios que no puede obtenerse a través de registros administrativos. En nuestro caso, hemos decidido hacer la exploración en su mayoría de la parte relacionada a cuestiones que se les hizo a adultos (personas de 16 años o más). Para agregar más variables de interés se escogieron algunas de otro conjunto de datos, también de esta encuesta, hecho a todos los integrantes de la vivienda y no solo a adultos. El enlace a los ficheros de microdatos se encuentra disponible en el siguiente [enlace](https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177092&menu=resultados&idp=1254735572981#!tabs-1254736195790).
 
 ## Carga de librerías y datos necesarios para el análisis
 
@@ -66,7 +66,7 @@ library(pacman)
 pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra)
 ```
 
-Pasamos ahora a hacer la carga del conjunto de datos, presentado tanto en .txt como .csv en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*. Este fichero nos será especialmente útil puesto que permitirá una automatización para convertir nuestra *Raw data* a *Technically correct data*, teniendo cada variable su tipo correcto.
+Pasamos ahora a hacer la carga del conjunto de datos, presentado tanto en .txt como .csv en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*. Este fichero nos será especialmente útil, puesto que permitirá una automatización para convertir nuestra *Raw data* a *Technically correct data*, teniendo cada variable su tipo correcto.
 
 ```{r extraccion_dataset_csv}
 ruta_csv <- "data/ECEPOVadultos_2021.csv"
@@ -124,7 +124,7 @@ Tablas3 <- read_excel(ruta_excel, sheet = "Tablas3", range = "A4:C48", col_names
 ```
 
 
-A pesar de que fue de gran utilidad el fichero que ofrecía INE para la transformación de las variables a un tipo correcto, aparecieron algunos fallos que tuvimos que solventar de manera manual. Determinadas variables no fueron bien codificadas por parte de INE, de tal forma que hubo que modificar ligeramente el fichero .xlsx. Concretamente, fue en algunos *diccionarios* de variables en los que no terminaba de estar correctamente bien determinado el *código* (lo que sería el level en un factor). El error presentado (en algunas variables) consistía, básicamente, en que aparecía "01" en lugar de "1" (para otros números similar), valor recogido en las observaciones.
+A pesar de que fue de gran utilidad el fichero que ofrecía INE para la transformación de las variables a un tipo correcto, aparecieron algunos fallos que tuvimos que solventar de manera manual. Determinadas variables no fueron bien codificadas por parte del INE, de tal forma que hubo que modificar ligeramente el fichero .xlsx. Concretamente, fue en algunos *diccionarios* de variables en los que no terminaba de estar correctamente determinado el *código* (lo que sería el level en un factor). El error presentado (en algunas variables) consistía, básicamente, en que aparecía "01" en lugar de "1" (para otros números similar), valor recogido en las observaciones.
 
 ```{r conversion_dataset}
 # Cambio manual por datos mal introducidos "2 " --> "2" para la posterior lectura con el diccionario
@@ -192,7 +192,7 @@ columnas_a_leer <- c("IDEN", "NPV", "FACTOR", "SEXO", "EDAD", "NACIM", "PNACIM")
 df_2 <- read_dta("./data/ECEPOVhogar_2021.dta", col_select = columnas_a_leer)
 ```
 
-Las variables SEXO, NACIM y PNACIM de este nuevo dataset deben ser convertidas a sus tipos correctos, por lo que se hace uso de la información que proporciona INE sobre las variables.
+Las variables SEXO, NACIM y PNACIM de este nuevo dataset deben ser convertidas a sus tipos correctos, por lo que se hace uso de la información que proporciona el INE sobre las variables.
 
 ```{r lectura_diseno_2}
 ruta_excel_2 <- "data/dr_ECEPOVhogar_2021.xlsx"
@@ -229,7 +229,7 @@ dplyr::glimpse(df_merged, width = 60)
 Observamos que es un dataset con total de 361934 observaciones y con 52 variables, lo cual es mucho más de lo que necesitaremos.
 
 Tras un análisis de las variables en *dr_ECEPOVadultos_2021.xlsx* y  
-*dr_ECEPOVhogar_2021.xlsx*, consideramos que muchas de las variables no nos otorgarán interés para el análisis que particularmente nosotros deseamos aplicar, por lo que seleccionaremos aquellas relevantes.
+*dr_ECEPOVhogar_2021.xlsx*, consideramos que muchas de las variables no nos otorgarán interés para el análisis que particularmente nosotros deseamos aplicar, por lo que seleccionaremos aquellas que hemos considerado más relevantes.
 
 
 ```{r variables_usadas, include = T}
@@ -338,7 +338,7 @@ kable_styling(kable_res, font_size = 7, position = "left")
 
 Una representación precisa de cómo se distribuyen los *missing values* por nuestro conjunto de datos lo otorga la librería *VIM* con la función *aggr*. Se han representado solamente aquellas variables que cuentan con algún NA para facilitar la visualización. En el siguiente gráfico puede observarse tanto la proporción total de valores faltantes en dichas variables individualmente (izquierda), como una serie de combinaciones posibles entre ellas de valores faltantes. 
 
-Así, encontramos por ejemplo que la combinación de NA en (SATISTIEMP, ANOESTUD, EDADESTUD, CAMPO) cuenta con una proporción del 26.49 % de los datos totales.
+Así, encontramos por ejemplo que la combinación de NA en (SATISTIEMP, ANOESTUD, EDADESTUD, CAMPO) cuenta con una proporción del 27.9 % de los datos totales.
 
 ```{r missing_values, include = T, fig.width = 5.8, fig.height = 4, fig.align = "left"}
 aggr_result <- capture.output({
@@ -352,7 +352,7 @@ invisible(aggr_result)
 ```
 # Exploración inicial / visualización
 
-Una vez hemos asegurado que nuestros datos estén en la estructura de data.frame, tengan valores correctamente etiquetados y estén almacenados con el tipo correcto, podemos empezar a buscar posibles patrones en las instancias o entre las características.
+Una vez hemos asegurado que nuestros datos estén en la estructura de data.frame, tengan los valores correctamente etiquetados y estén almacenados con el tipo correcto, podemos empezar a buscar posibles patrones en las instancias o entre las características.
 
 ## Análisis univariante.
 
@@ -386,22 +386,7 @@ kable_sumnum <- knitr::kable(df_sumnum, format = "latex",
 kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRUE)
 ```
 
-Pasamos a hacer una visualización de estas variables.
 
-```{r edad_by_sexo}
-p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
-  geom_freqpoly(binwidth = 1) +
-  labs(
-    title = "Distribución de edades en la encuesta",
-    x = "Edad / años",
-    y = "Frecuencia"
-  ) +
-  scale_color_manual(values = c("Hombre" = "blue", "Mujer" = "red")) +
-  theme_minimal() +
-  scale_x_continuous(breaks = seq(15, 120, by = 10))
-
-p_edad
-```
 ```{r}
 # Calcular la media y la desviación estándar de la variable "EDAD"
 
@@ -431,6 +416,7 @@ p_edad_histogram_density <- ggplot(df, aes(x = EDAD)) +
 
 p_edad_histogram_density
 ```
+
 ```{r}
 # Crea un QQ plot para la variable "EDAD"
 
@@ -443,6 +429,26 @@ qqplot_edad <- ggplot(df, aes(sample = EDAD, color = SEXO)) +
 
 qqplot_edad
 ```
+
+## Análisis bivariante
+
+Pasamos a generar gráficos para visualizar la relación entre diferentes variables.
+
+```{r edad_by_sexo}
+p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
+  geom_freqpoly(binwidth = 1) +
+  labs(
+    title = "Distribución de edades en la encuesta",
+    x = "Edad / años",
+    y = "Frecuencia"
+  ) +
+  scale_color_manual(values = c("Hombre" = "blue", "Mujer" = "red")) +
+  theme_minimal() +
+  scale_x_continuous(breaks = seq(15, 120, by = 10))
+
+p_edad
+```
+
 
 https://ggplot2.tidyverse.org/reference/geom_qq.html
 
