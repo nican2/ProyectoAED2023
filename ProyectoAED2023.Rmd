@@ -430,6 +430,34 @@ qqplot_edad <- ggplot(df, aes(sample = EDAD, color = SEXO)) +
 qqplot_edad
 ```
 
+### Variables de tipo categórico
+
+```{r}
+frecuencias <- data.frame(Situacion = df$SITLAB) %>% count(Situacion)
+```
+
+
+```{r}
+ggplot(frecuencias, aes(x = reorder(Situacion, -n), y = n, fill = n)) +
+  geom_bar(stat = "identity",
+           col = "black") +
+  labs(title = "Diagrama de Barras para representar la Situación Laboral",
+       x = "Categoría",
+       y = "Frecuencia") +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1)) +
+  scale_fill_gradient(low = "lightblue", high = "darkblue")
+```
+
+
+```{r}
+ggplot(data=dataset_hist1, aes(x=AGE)) +
+  geom_histogram(breaks=seq(20, 50, by=2),
+                 col="black",
+                 aes(fill=..count..)) +
+  scale_fill_gradient("Count", low="blue", high="red")
+```
+
+
 ## Análisis bivariante
 
 Pasamos a generar gráficos para visualizar la relación entre diferentes variables.
@@ -447,6 +475,10 @@ p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
   scale_x_continuous(breaks = seq(15, 120, by = 10))
 
 p_edad
+```
+
+```{r}
+ggplot(df, aes(x = TDOMEST, y = EDAD, colour = SEXO)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea"))
 ```
 
 
@@ -529,9 +561,19 @@ Podemos observar que hay múltiples outliers, como consecuencia de que la inmens
 
 ### Variables de tipo categórico
 
+```{r crosstable, include=TRUE}
+library(gmodels)
+kable_crosstab <- knitr::kable(as.data.frame(CrossTable(df$ESTUDIOS, df$SITLAB)), format = "latex",
+             booktabs = TRUE, 
+             caption = "Tabla cruzada para comparar los estudios realizado con la situación laboral", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table",
+             tabular.environment = "tabularx")
+```
 
+```{r}
 
-
+```
 
 
 
