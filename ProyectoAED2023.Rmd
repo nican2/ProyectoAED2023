@@ -389,7 +389,7 @@ kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRU
 
 Para completar el análisis univariante de las variables numéricas, se ha generado el siguiente gráfico. Que se corresponde con el histograma de la variable *EDAD* y con la correspondiente densidad de los datos.
 
-```{r echo=FALSE}
+```{r echo=FALSE, include=TRUE}
 # Calcular la media y la desviación estándar de la variable "EDAD"
 
 media_edad <- mean(df$EDAD)
@@ -431,11 +431,11 @@ frecuencias <- data.frame(Situacion = df$SITLAB) %>% count(Situacion)
 ```
 
 
-```{r}
+```{r echo=FALSE, include=TRUE}
 ggplot(frecuencias, aes(x = reorder(Situacion, -n), y = n, fill = n)) +
   geom_bar(stat = "identity",
            col = "black") +
-  labs(title = "Diagrama de Barras para representar la Situación Laboral",
+  labs(title = "Diagrama de Barras para representar la Situación Laboral (SITLAB)",
        x = "Categoría",
        y = "Frecuencia") +
   theme(axis.text.x = element_text(angle = 70, hjust = 1)) +
@@ -445,7 +445,18 @@ Tal y como se aprecia en el gráfico, en el momento en que se realizó la encues
 
 ## Análisis bivariante
 
-Pasamos a generar gráficos para visualizar la relación entre diferentes variables.
+Como su nombre indica, la fase de análisis bivariante, consiste en la búsqueda de relación entre dos variables. Para ello existen diferentes formas de representación, en función del tipo de variables que se esté tratando tratando.
+
+### Gráficos
+
+<!-- Númerica - Númerica -->
+En primer lugar, se generará un gráfico para var la relación entre la edad de las personas y su grado de satisfacción con el tiempo de desplazamiento hasta su puesto de trabajo.
+
+```{r}
+ggplot(df, aes(x = EDADEC, y = NHIJOS))+geom_point()
+```
+
+<!-- Númerica - Categórica -->
 
 ```{r edad_by_sexo}
 p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
@@ -465,6 +476,8 @@ p_edad
 ```{r}
 ggplot(df, aes(x = TDOMEST, y = EDAD, colour = SEXO)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea"))
 ```
+
+<!-- Categórica - Categórica -->
 
 ```{r}
 # Crea un QQ plot para la variable "EDAD"
