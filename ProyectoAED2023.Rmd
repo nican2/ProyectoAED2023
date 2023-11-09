@@ -63,7 +63,7 @@ Como es habitual, cargamos las librerías que necesitamos al inicio del document
 ```{r librerias, message = F, include = T, echo = F}
 # Carga de librerías necesarias con pacman
 library(pacman)
-pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra)
+pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, ggmap, GGally, leaflet, leaflet.extras2, colorspace)
 ```
 
 Pasamos ahora a hacer la carga del conjunto de datos, presentado tanto en .txt como .csv en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*. Este fichero nos será especialmente útil puesto que permitirá una automatización para convertir nuestra *Raw data* a *Technically correct data*, teniendo cada variable su tipo correcto.
@@ -134,7 +134,7 @@ manual_change <- c("ESTUDIOS", "CAMPO", "NDESPLA", "MTRANSPOR_1", "MTRANSPOR_2")
 df_1 <- df_1 %>%
   mutate(across(all_of(manual_change), ~ str_remove_all(., " ")))
 
-# Codificamos los NA de la variable NHIJOS como 0, ya que nos será útil más tarde esta interpretación
+# Codificamos los NA de la variable NHIJOS como 0, ya que nos será útil más tarde esta interpretación. Esto se ha hecho tras asegurar que la aparición de NA es un si y solo si debido a que la variable factor HIJOS tenía un "No"
 
 df_1 <- df_1 %>%
   mutate(NHIJOS = ifelse(is.na(NHIJOS), 0, NHIJOS))
@@ -388,8 +388,27 @@ kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRU
 
 Pasamos a hacer una visualización de estas variables.
 
+```{r}
+p_edad <- ggplot(df, aes(x = EDAD)) +
+  geom_freqpoly(binwidth = 1) +
+  labs(
+    title = "Distribución de edades en la encuesta",
+    x = "Edad / años",
+    y = "Frecuencia"
+  ) +
+  theme_minimal() +
+  scale_x_continuous(breaks = seq(15, 120, by = 10))
+
+p_edad
+```
+
+
+ggpairs útil,mirar ggcorrplot
+
+
+
 ```{r edad_by_sexo}
-p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
+p_edad_sexo <- ggplot(df, aes(x = EDAD, color = SEXO)) +
   geom_freqpoly(binwidth = 1) +
   labs(
     title = "Distribución de edades en la encuesta",
@@ -400,7 +419,7 @@ p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
   theme_minimal() +
   scale_x_continuous(breaks = seq(15, 120, by = 10))
 
-p_edad
+p_edad_sexo
 ```
 ```{r}
 # Calcular la media y la desviación estándar de la variable "EDAD"
@@ -525,18 +544,72 @@ Podemos observar que hay múltiples outliers, como consecuencia de que la inmens
 
 
 
+# Mapa de Jesús -- pruebas
 
+```{r}
+classify_vector <- function(vector) {
+  # Calcula los cuantiles
+  quantiles <- quantile(vector, probs = c(0, 0.2, 0.4, 0.6, 0.8, 1))
 
-
-
-```{r anadir_luego}
-df %>%
-  filter(is.na(NHIJOS) & HIJOS == "Sí")
-
-df %>%
-  filter(!is.na(NHIJOS) & HIJOS == "No")
+  # Asigna las categorías
+  classified <- cut(vector, breaks = quantiles, labels = c(4, 8, 12, 16, 20), include.lowest = TRUE)
+  print(classified)
+  return(as.numeric(classified))
+}
 ```
 
-Nota: meter mapa por provincias.
+
+
+```{r}
+# Calcular el número medio de NHIJOS en cada provincia
+count_observations <- df %>%
+  group_by(IDQ_PV) %>%
+  summarise(Count = n())
+
+mean_satis <- df %>%
+  group_by(IDQ_PV) %>%
+  summarise(Mean_satistiemp = mean(SATISTIEMP, na.rm = TRUE))
+
+# Obtener las coordenadas de las capitales de provincia
+load("./data/capital_locations.RData")
+capital_locations <- capital_locations %>%
+  mutate(IDQ_PV = unique(df$IDQ_PV))
+
+# Unir los datos de la media de NHIJOS con las coordenadas de las capitales
+capital_data <- merge(mean_satis, capital_locations, by = "IDQ_PV", sort = FALSE)
+
+city_name <- "Madrid"
+load("./data/center_location.RData")
+
+# Define a color palette with more colors
+n_colors <- 52  # You can adjust the number of colors as needed
+colors <- diverging_hcl(n = n_colors, h = c(0, 255))
+breaks <- seq(min(capital_data$Mean_satistiemp), max(capital_data$Mean_satistiemp), length.out = 5)
+selected_colors <- colorRampPalette(colors)(5)
+
+mymap <- leaflet() %>%
+  addTiles(urlTemplate = 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png') %>%
+  setView(location$lon, location$lat, zoom = 6) %>%
+  addCircleMarkers(
+    data = capital_data,
+    lat = ~lat,
+    lng = ~lon,
+    radius = 8,
+    fillOpacity = 1, 
+    color = ~colorNumeric(colors, domain = NULL)(capital_data$Mean_satistiemp),
+    label = ~IDQ_PV,
+    popup = ~paste("Mean SATISTIEMP: ", round(Mean_satistiemp, 2))
+  ) %>%
+  addLegend("bottomright", 
+    colors = selected_colors,
+    labels = round(breaks, 1)
+  )
+
+mymap
+
+# añadir popup con media y label con nombre; addLayersControl ara controlar legenda y demas...
+```
+
+
 
 
