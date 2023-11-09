@@ -58,7 +58,7 @@ options(width = 100)
 knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F)
 ```
 
-Como es habitual, cargamos las librerías que necesitamos al inicio del documento.
+Primeramente, se cargan todas las librearías necesarias en las diferentes fases del proyecto.
 
 ```{r librerias, message = F, include = T, echo = F}
 # Carga de librerías necesarias con pacman
@@ -66,7 +66,7 @@ library(pacman)
 pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra)
 ```
 
-Pasamos ahora a hacer la carga del conjunto de datos, presentado tanto en .txt como .csv en la carpeta *data* incluida en el repositorio del proyecto. Asimismo, cargamos el fichero .xlsx que nos muestra el *Diseño de registro y valores válidos de las variables*. Este fichero nos será especialmente útil, puesto que permitirá una automatización para convertir nuestra *Raw data* a *Technically correct data*, teniendo cada variable su tipo correcto.
+A continuación, se realiza la carga del conjunto de datos, presente tanto en *.txt* como *.csv* en la carpeta *./data* incluida en el repositorio del proyecto. Asimismo, se carga el fichero .xlsx que nos muestra el diseño de registro y valores válidos de las variables. Este fichero será especialmente útil, puesto que permitirá una automatización para convertir el conjunto de datos, que actualmente se encuentra en estado Raw data, a Technically correct data, teniendo cada variable su tipo correspondiente.
 
 ```{r extraccion_dataset_csv}
 ruta_csv <- "data/ECEPOVadultos_2021.csv"
@@ -123,8 +123,7 @@ Tablas2 <- read_excel(ruta_excel, sheet = "Tablas2", range = "A4:C112", col_name
 Tablas3 <- read_excel(ruta_excel, sheet = "Tablas3", range = "A4:C48", col_names = TRUE)
 ```
 
-
-A pesar de que fue de gran utilidad el fichero que ofrecía INE para la transformación de las variables a un tipo correcto, aparecieron algunos fallos que tuvimos que solventar de manera manual. Determinadas variables no fueron bien codificadas por parte del INE, de tal forma que hubo que modificar ligeramente el fichero .xlsx. Concretamente, fue en algunos *diccionarios* de variables en los que no terminaba de estar correctamente determinado el *código* (lo que sería el level en un factor). El error presentado (en algunas variables) consistía, básicamente, en que aparecía "01" en lugar de "1" (para otros números similar), valor recogido en las observaciones.
+A pesar de que resultó de gran utilidad el fichero que ofrecía INE para la transformación de las variables a un tipo correspondiente, surgieron algunos fallos que se debieron solventar de manera manual. Determinadas variables no fueron adecuadamente codificadas por parte del INE, de tal forma que fue necesario que modificar ligeramente el fichero .xlsx. Concretamente, algunos diccionarios de variables en los que no terminaba de estar correctamente determinado el código (lo que sería el level en un factor). El problema presentado (en algunas variables) consistía, básicamente, en que aparecía "01" en lugar de "1", valor recogido en las observaciones.
 
 ```{r conversion_dataset}
 # Cambio manual por datos mal introducidos "2 " --> "2" para la posterior lectura con el diccionario
@@ -184,7 +183,7 @@ for (i in seq_along(dic_vars)) {
 }
 ```
 
-Una vez está hecha la conversión del dataset que contaba con un mayor número de variables procedemos a hacer una unión con el otro mencionado anteriormente, solo utilizando algunas variables de interés como SEXO o EDAD.
+Una vez está hecha la conversión del dataset que contaba con un mayor número de variables se procede a hacer una unión con el otro dataset mencionado anteriormente, solo utilizando algunas variables de interés como SEXO o EDAD.
 
 
 ```{r seleccion_columnas}
@@ -192,7 +191,7 @@ columnas_a_leer <- c("IDEN", "NPV", "FACTOR", "SEXO", "EDAD", "NACIM", "PNACIM")
 df_2 <- read_dta("./data/ECEPOVhogar_2021.dta", col_select = columnas_a_leer)
 ```
 
-Las variables SEXO, NACIM y PNACIM de este nuevo dataset deben ser convertidas a sus tipos correctos, por lo que se hace uso de la información que proporciona el INE sobre las variables.
+Las variables SEXO, NACIM y PNACIM de este nuevo dataset deben ser convertidas a sus tipos correspondientes, por lo que se hace uso de la información que proporciona el INE sobre dichas variables.
 
 ```{r lectura_diseno_2}
 ruta_excel_2 <- "data/dr_ECEPOVhogar_2021.xlsx"
@@ -212,7 +211,7 @@ df_2 <- df_2 %>%
   mutate(PNACIM = factor(PNACIM, levels = T_PAIS$Código, labels = T_PAIS$Descripción))
 ```
 
-Hacemos el merge utilizando las variables de identificación IDEN, NPV y FACTOR, de tal manera que podamos establecer una relación unívoca entre los adultos presentes en el primer y segundo dataset.
+Por último, para lograr la unión de ambos datasets, se emplea la función *merge* utilizando las variables de identificación IDEN, NPV y FACTOR, de tal manera que podamos establecer una relación unívoca entre los adultos presentes en el primer y segundo dataset.
 
 ```{r union_datasets}
 df_merged <- merge(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "NACIM", "PNACIM")], by = c("IDEN", "NPV", "FACTOR"), all.x = TRUE)
@@ -561,7 +560,7 @@ Podemos observar que hay múltiples outliers, como consecuencia de que la inmens
 
 ### Variables de tipo categórico
 
-```{r crosstable, include=TRUE}
+```{r crosstable}
 library(gmodels)
 kable_crosstab <- knitr::kable(as.data.frame(CrossTable(df$ESTUDIOS, df$SITLAB)), format = "latex",
              booktabs = TRUE, 
