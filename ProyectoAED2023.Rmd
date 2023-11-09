@@ -479,6 +479,10 @@ ggplot(df, aes(x = TDOMEST, y = EDAD, colour = SEXO)) + geom_point(size = 0.25) 
 
 <!-- Categórica - Categórica -->
 
+
+
+### Resto de cosas hechas
+
 ```{r}
 # Crea un QQ plot para la variable "EDAD"
 
