@@ -359,6 +359,8 @@ Distinguiremos el análisis entre las variables de tipo numérico y las de tipo 
 
 ### Variables de tipo numérico
 
+Se ha creado una función para poder obtener diferentes estadísticos de las variables numéricas. Dichos estadisticos se representan mediante la siguiente tabla.
+
 ```{r summarise_numeric}
 df_sumnum <- df %>%
   select_if(is.numeric) %>%
@@ -385,8 +387,9 @@ kable_sumnum <- knitr::kable(df_sumnum, format = "latex",
 kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRUE)
 ```
 
+Para completar el análisis univariante de las variables numéricas, se ha generado el siguiente gráfico. Que se corresponde con el histograma de la variable *EDAD* y con la correspondiente densidad de los datos.
 
-```{r}
+```{r echo=FALSE}
 # Calcular la media y la desviación estándar de la variable "EDAD"
 
 media_edad <- mean(df$EDAD)
@@ -415,21 +418,13 @@ p_edad_histogram_density <- ggplot(df, aes(x = EDAD)) +
 
 p_edad_histogram_density
 ```
-
-```{r}
-# Crea un QQ plot para la variable "EDAD"
-
-qqplot_edad <- ggplot(df, aes(sample = EDAD, color = SEXO)) +
-  stat_qq() +
-  stat_qq_line() +
-  ggtitle("QQ Plot para la variable EDAD") +
-  xlab("Cuantiles teóricos") +
-  ylab("Cuantiles observados")
-
-qqplot_edad
-```
+Mediante el gráfico anterior, se aprecia que las edades más fracuentes en el dataset van de 40 a 60 años. 
 
 ### Variables de tipo categórico
+
+A diferencia de las variables numérica, en las variables categóricas no es posible obtener muchos estadísticos. El más común es la moda, que se corresponde con la columna *topCount* de la tabla 2.
+
+Otra información que se puede analizar en el análisis univariante de una variable categórica es la frecuencia de aparición de cada una de las categorías. Esto es posible representarlo visualmente mediante un gráfico de barras. Es por ello que se ha realizado dicho gráfico para explicar los datos de la variable *SITLAB*
 
 ```{r}
 frecuencias <- data.frame(Situacion = df$SITLAB) %>% count(Situacion)
@@ -446,16 +441,7 @@ ggplot(frecuencias, aes(x = reorder(Situacion, -n), y = n, fill = n)) +
   theme(axis.text.x = element_text(angle = 70, hjust = 1)) +
   scale_fill_gradient(low = "lightblue", high = "darkblue")
 ```
-
-
-```{r}
-ggplot(data=dataset_hist1, aes(x=AGE)) +
-  geom_histogram(breaks=seq(20, 50, by=2),
-                 col="black",
-                 aes(fill=..count..)) +
-  scale_fill_gradient("Count", low="blue", high="red")
-```
-
+Tal y como se aprecia en el gráfico, en el momento en que se realizó la encuesta, predominaban claramente las personas ocupadas a tiempo completo. Seguidas de las jubiladas.
 
 ## Análisis bivariante
 
@@ -480,6 +466,18 @@ p_edad
 ggplot(df, aes(x = TDOMEST, y = EDAD, colour = SEXO)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea"))
 ```
 
+```{r}
+# Crea un QQ plot para la variable "EDAD"
+
+qqplot_edad <- ggplot(df, aes(sample = EDAD, color = SEXO)) +
+  stat_qq() +
+  stat_qq_line() +
+  ggtitle("QQ Plot para la variable EDAD") +
+  xlab("Cuantiles teóricos") +
+  ylab("Cuantiles observados")
+
+qqplot_edad
+```
 
 https://ggplot2.tidyverse.org/reference/geom_qq.html
 
