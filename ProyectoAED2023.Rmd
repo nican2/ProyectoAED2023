@@ -219,16 +219,16 @@ df_merged <- merge(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "NACI
 
 ## Características generales de los datos
 
-Podemos hacernos una idea rápida de cuáles son los datos pertenecientes a nuestro dataframe, *df*, haciendo uso de la función glimpse, perteneciente a la librería dplyr. 
+Es posible hacerse una idea rápida de cuáles son los datos pertenecientes al dataframe, *df*, haciendo uso de la función *glimpse*, perteneciente a la librería *dplyr*. 
 
 ```{r glimpse}
 dplyr::glimpse(df_merged, width = 60)
 ```
 
-Observamos que es un dataset con total de 361934 observaciones y con 52 variables, lo cual es mucho más de lo que necesitaremos.
+Se observa que es un dataset con total de 361934 observaciones y con 52 variables, lo cual es mucho más de lo que se puede abarcar en un análisis exploratorio como el que se requiere en este trabajo.
 
 Tras un análisis de las variables en *dr_ECEPOVadultos_2021.xlsx* y  
-*dr_ECEPOVhogar_2021.xlsx*, consideramos que muchas de las variables no nos otorgarán interés para el análisis que particularmente nosotros deseamos aplicar, por lo que seleccionaremos aquellas que hemos considerado más relevantes.
+*dr_ECEPOVhogar_2021.xlsx*, se ha considerado que muchas de las variables no nos otorgarán interés para el análisis que particularmente se desea aplicar, por lo que se seleccionaran aquellasvariables consideradas más relevantes.
 
 
 ```{r variables_usadas, include = T}
