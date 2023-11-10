@@ -450,11 +450,8 @@ Como su nombre indica, la fase de análisis bivariante, consiste en la búsqueda
 ### Gráficos
 
 <!-- Númerica - Númerica -->
-En primer lugar, se generará un gráfico para var la relación entre la edad de las personas y su grado de satisfacción con el tiempo de desplazamiento hasta su puesto de trabajo.
+Se podría hacer un gráfico de dispersión per no sale nada vistos
 
-```{r}
-ggplot(df, aes(x = EDADEC, y = NHIJOS))+geom_point()
-```
 
 <!-- Númerica - Categórica -->
 
@@ -472,12 +469,20 @@ p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
 
 p_edad
 ```
-
-```{r echo=FALSE, include=TRUE}
-ggplot(df, aes(x = TDOMEST, y = EDAD, colour = SEXO)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea"))
-```
+  <!-- En numérica categórica también iría el mapa -->
 
 <!-- Categórica - Categórica -->
+
+  <!-- Aquí podríamos poner una gráfica de barras en las que cada barra la pinta de un color en función de otra varible categórica -->
+
+## Análisis multivariante (todo lo que sea más de tres variables)
+
+```{r echo=FALSE, include=TRUE}
+ggplot(df, aes(x = TDOMEST, y = EDAD, colour = EC)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+  <!-- Aquí iría un mosaico de esos en los que se relacionan 3 o más variables -->
 
 ### Caracterización
 
@@ -531,14 +536,7 @@ theme(
                 title.position = "top", title.hjust = 0.5))
 
 ```
-<!-- Cross Table Variables categóricas -->
-
-```{r echo=FALSE, include = FALSE}
-library(crosstable)
-ct1 = crosstable(df, c(SITLAB, COMPRAINT, TDOMEST), by=HIJOS, total="both", percent_pattern="{n} ({p_row}/{p_col})", percent_digits=0, funs=mean, effect=TRUE) %>% as_flextable()
-ct1
-```
-
+<!-- Tabla crosstable -->
 
 ### Resto de cosas hechas
 
