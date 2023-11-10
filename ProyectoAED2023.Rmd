@@ -708,17 +708,86 @@ for(i in 1:t){
 matriz_one_hot <- model.matrix(~ . - 1, data = factor_menos4)
 
 # Agregar el resultado al dataframe original
-df <- cbind(col_numeric, matriz_one_hot)
+df_cor <- cbind(col_numeric, matriz_one_hot)
 
 
 # Con esto ya se tiene un df con una columna na para cada variable, por lo que se buscan correlaciones entre los datos
 
-col_na <- 
-col_var <- 
-for(i in 1:length(col_na)){
-  res_cor <- cor(df[,],df[,],method="spearman")
+# Es necesario identificar un valor a partir de la cual la correlacion entre dos variables es significativa
+# (dentro del intervalo [0,1]). En este caso se toma 0.90 para obtener las correlaciones mas fuertes y estudiarlas en
+# profundidad
+
+col_na <- grep(pattern = "_NA$",x=colnames(df_cor))
+col_var <- grep(pattern = "_NA$",x=colnames(df_cor),invert = T)
+
+
+# Se genera una matriz vacia que almacenara correlaciones entre NA y columnas
+matriz_corr <- matrix(data = rep(0,times=length(col_na)*length(col_var)),
+                      ncol = length(col_na),nrow = length(col_var))
+
+colnames(matriz_corr) <- colnames(df_cor)[col_na]
+rownames(matriz_corr) <- colnames(df_cor)[col_var]
   
+# Se calcula la correlacion en cada par, salvo que procedan de la misma variable
+for(col_na in (col_na)){
+  for(col_var in (col_var)){
+    n_na <- colnames(df_cor)[col_na]
+    n_var <-colnames(df_cor)[col_var]
+    n_orig <-n_na[1:(length(n_na)-3)]
+    
+    # Comprueba si provienen de la misma variable
+    if(grepl(pattern=n_orig,x=n_var)){
+     #Porviene de la misma variable 
+    }
+    else{
+      correlacion <-cor(df_cor[[n_na]],df_cor[[n_var]],method = "spearman")
+      matriz_corr[n_var,n_na] <- correlacion
+    }
+  }
   
+}
+
+# se visualiza por pantalla la matriz de correlaciones 
+
+df_correlacion <- as.data.frame(as.table(matriz_corr))
+
+
+# Renombrar las columnas si es necesario
+names(df_correlacion) <- c("Columna", "Fila", "Valor")
+
+# Crear un gráfico de calor con ggplot2
+ggplot(df_correlacion, aes(x = Columna, y = Fila, fill = Valor)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "blue") +
+  labs(title = "Mapa de Calor",
+       x = "Columna",
+       y = "Fila",
+       fill = "Valor") +
+  theme_minimal()
+
+
+one_hot_encoding_with_na <- function(dataframe) {
+  # Inicializar un nuevo dataframe para almacenar los resultados
+  result_df <- data.frame()
+  
+  # Iterar sobre cada columna del dataframe original
+  for (col in names(dataframe)) {
+    # Realizar one-hot encoding usando la función 'model.matrix'
+    one_hot_encoded <- as.data.frame(model.matrix(~ 0 + dataframe[[col]]))
+    
+    # Añadir una columna que indique la presencia de NA en la columna original
+    one_hot_encoded$NA_indicator <- ifelse(is.na(dataframe[[col]]), 1, 0)
+    
+    # Renombrar las columnas para evitar conflictos de nombres
+    col_names <- names(one_hot_encoded)
+    new_col_names <- c(paste0(col, "_", col_names[-length(col_names)]), paste0(col, "_NA"))
+    names(one_hot_encoded) <- new_col_names
+    
+    # Concatenar el resultado al dataframe final
+    result_df <- cbind(result_df, one_hot_encoded)
+  }
+  
+  return(result_df)
 }
 
 
