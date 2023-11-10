@@ -533,7 +533,7 @@ theme(
 ```
 <!-- Cross Table Variables categóricas -->
 
-```{r}
+```{r echo=FALSE, include = FALSE}
 library(crosstable)
 ct1 = crosstable(df, c(SITLAB, COMPRAINT, TDOMEST), by=HIJOS, total="both", percent_pattern="{n} ({p_row}/{p_col})", percent_digits=0, funs=mean, effect=TRUE) %>% as_flextable()
 ct1
