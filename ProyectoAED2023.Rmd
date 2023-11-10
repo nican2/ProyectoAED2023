@@ -63,7 +63,7 @@ Primeramente, se cargan todas las librearías necesarias en las diferentes fases
 ```{r librerias, message = F, include = T, echo = F}
 # Carga de librerías necesarias con pacman
 library(pacman)
-pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra)
+pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2)
 ```
 
 A continuación, se realiza la carga del conjunto de datos, presente tanto en *.txt* como *.csv* en la carpeta *./data* incluida en el repositorio del proyecto. Asimismo, se carga el fichero .xlsx que nos muestra el diseño de registro y valores válidos de las variables. Este fichero será especialmente útil, puesto que permitirá una automatización para convertir el conjunto de datos, que actualmente se encuentra en estado Raw data, a Technically correct data, teniendo cada variable su tipo correspondiente.
@@ -479,7 +479,56 @@ ggplot(df, aes(x = TDOMEST, y = EDAD, colour = SEXO)) + geom_point(size = 0.25) 
 
 <!-- Categórica - Categórica -->
 
+### Caracterización
 
+```{r}
+# Seleccionamos las variables numéricas del dataframe
+df_numericas <- df[sapply(df, is.numeric)]
+# Eliminamos las instancias que contengan NAs, ya que esto producirá errores en las correlaciones
+df_numericas_sin_nas <- na.omit(df_numericas)
+normalizados <- scale(df_numericas_sin_nas)
+# Obtenemos la matriz de correlación
+corr_mat <- round(cor(as.data.frame(normalizados)),2)
+```
+
+```{r}
+# Get upper triangle of the correlation matrix
+get_upper_tri <- function(corr_mat){
+  corr_mat[lower.tri(corr_mat)]<- NA
+  return(corr_mat)
+}
+```
+
+```{r}
+upper_tri <- get_upper_tri(corr_mat)
+melted_upper_tri <- melt(upper_tri, na.rm = TRUE)
+```
+
+```{r}
+ggplot(data = melted_upper_tri, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed() + 
+  geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
+theme(
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.border = element_blank(),
+  panel.background = element_blank(),
+  axis.ticks = element_blank(),
+  legend.justification = c(1, 0),
+  legend.position = c(0.6, 0.7),
+  legend.direction = "horizontal")+
+  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+                title.position = "top", title.hjust = 0.5))
+
+```
 
 ### Resto de cosas hechas
 
