@@ -642,6 +642,13 @@ ggplot(df, aes(x = EC, y = EDADEC)) +
 ```
 
 
+
+```{r}
+library(dbscan)
+```
+
+
+
 ```{r}
 
 chi2 <- chisq.test(table(is.na(df$EC), df$EDADEC))
@@ -792,6 +799,34 @@ one_hot_encoding_with_na <- function(dataframe) {
 
 
 ```
+
+
+
+#### Se aumenta el numero de valores perdidos de forma completely at random
+Para añadir mayor incertidumbre en el conjunto de datos, se ha decidido eliminar un 5% de 
+los valores del dataset para complicar el análisis. El siguiente fragmento de codigo se encarga
+de elimiar de nuestro dataframe estos datos
+
+```{r}
+n_datos <- ncol(df)*nrow(df)
+
+rows <- sample(1:nrow(df), n_datos%/%5 , replace = TRUE)
+cols <- sample(1:ncol(df), n_datos%/%5, replace = TRUE)
+
+for (k in 1:length(rows)) {
+  df[rows[k], cols[k]] <- NA
+}
+
+base::Map(function(i, j) {df[i, j] <- NA}, rows, cols)
+
+```
+
+
+
+#### Rellenado de valores faltantes
+Teniendo en cuenta la representacion grafica realizada, en este caso se imputaran 
+valores perdidos por motivos evidentes en el conjunto de datos. Estos son:
+*   Falta de numero de hijos cuando la columna 
 
 
 
