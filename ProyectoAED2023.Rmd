@@ -430,6 +430,9 @@ qqplot_edad <- ggplot(df, aes(sample = EDAD, color = SEXO)) +
 qqplot_edad
 ```
 
+Otra variable numérica sujeta a estudio en este caso será el año de estudio
+
+
 ### Variables de tipo categórico
 
 ```{r}
@@ -571,7 +574,13 @@ kable_crosstab <- knitr::kable(as.data.frame(CrossTable(df$ESTUDIOS, df$SITLAB))
              tabular.environment = "tabularx")
 ```
 
-```{r}
+Además 
+
+```{r mosaico_categoricas}
+ggplot(df, aes(x = Genero, y = Musica, fill = Edad))+
+  geom_tile() +
+  labs(x = "Género", y = "Música", fill = "Edad") +
+  theme_minimal()
 
 ```
 
@@ -585,6 +594,137 @@ df %>%
   filter(!is.na(NHIJOS) & HIJOS == "No")
 ```
 
-Nota: meter mapa por provincias.
+```{r}
+df_cluster <- df%>%
+  select(ANOESTUD ,EDADESTUD)
+
+
+scaled_data <- scale(df_cluster)
+k <- 3  # Número de clusters
+kmeans_result <- kmeans(scaled_data, centers = k)
+
+# Puedes visualizar el dendrograma resultante
+plot(hierarchical_clustering)
+```
+
+
+
+```{r}
+sum(is.na(df$EC))
+sum(is.na(df$EDADEC))
+
+ggplot(df, aes(x = EC, y = EDADEC, fill = is.na(EDADEC))) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("TRUE" = "red", "FALSE" = "blue")) +
+  labs(title = "Distribución de Variable Continua por Factor y NA",
+       x = "Factor",
+       y = "Variable Continua",
+       fill = "NA") +
+  theme_minimal()
+
+```
+
+
+```{r}
+
+
+ggplot(df, aes(x = EC, y = EDADEC)) +
+  geom_boxplot(aes(fill = is.na(EDADEC))) +
+  geom_point(data = df[is.na(df$EDADEC), ], aes(x = EC, y = EDADEC), color = "red", shape = 19) +
+  scale_fill_manual(values = c("TRUE" = "blue", "FALSE" = "lightgray")) +
+  labs(title = "Distribución de Variable Continua por Factor con NA",
+       x = "Factor",
+       y = "Variable Continua",
+       fill = "NA") +
+  theme_minimal()
+
+
+```
+
+
+```{r}
+
+chi2 <- chisq.test(table(is.na(df$EC), df$EDADEC))
+chi2
+```
+
+```{r}
+# Funcion que estudia la correlacion de NA de una columna frente a los valores de otra columna
+correlacion_cols <- function(c1,c2){
+  valores_na <- is.na(c1)
+  columna_a_con_na <- ifelse(valores_na, 1, 0)
+  correlacion <- cor(columna_a_con_na, columna_b)
+  return(correlacion)
+}
+
+col_factor <- df[sapply(df, is.factor)]
+col_numeric <- df[sapply(df, is.numeric)]
+
+sapply(col_factor, function(x){length(unique(x))})
+
+factor_menos4 <- col_factor[sapply(col_factor, function(x){length(unique(x))<6})]
+#factor_mas5 <- col_factor[sapply(col_factor, function(x){length(unique(x))>5})]
+
+columnas <- c(names(col_numeric),)
+
+
+
+
+
+# Perform one-hot encoding for categorical variables
+encoded_data <- model.matrix(~ . - 1, data)
+
+# Combine the numerical and one-hot encoded data frames
+combined_data <- cbind(numerical_data, encoded_data)
+
+# View the combined data
+print(combined_data)
+
+
+```
+
+Algorimo para la detección de correlaciones entre valores perdidos y columnas para la determinación de la forma en la que
+se han perdido los valores. En este caso, se estudian relaciones atendiendo al tipo de datos de las columnas, si es factoro numerica
+
+En primer paso, se filtra por tipo de datos. Tras esto, se aplica one hot encoding para obtener columans continuas de las discretas. Dado que aplicar one hot encoding a factores con una gran cantidad de valores aumentaria demasiado la dimensionalidad, se ha decidido que solo se aplicará esta técnica a, haciendo uso de otro tipo de técnicas como el contraste de hiposesis mediante chi cuadrado para estudiar la correlacion de estas variables.
+
+```{r}
+col_factor <- df[sapply(df, is.factor)]
+col_numeric <- df[sapply(df, is.numeric)]
+factor_menos4 <- col_factor[sapply(col_factor, function(x){length(unique(x))<6})]
+
+t <- lenght(col_numeric)
+# Se extraen una columna que indique la presencia de los NA en cada columna numerica
+for(i in 1:t){
+  if(sum(is.na(col_numeric[i]))!=0){
+    col_numeric <- col_numeric %>%
+      mutate(col=is.na(col_numeric[i]))
+    colnames(col_numeric)[ncol(col_numeric)] <-colnames(col_numeric)[i] +"_NA"
+  }
+}
+
+
+# Se aplica one hot encoding con las categoricas, que tambien obtendra una columna para los NA
+matriz_one_hot <- model.matrix(~ . - 1, data = factor_menos4)
+
+# Agregar el resultado al dataframe original
+df <- cbind(col_numeric, matriz_one_hot)
+
+
+# Con esto ya se tiene un df con una columna na para cada variable, por lo que se buscan correlaciones entre los datos
+
+col_na <- 
+col_var <- 
+for(i in 1:length(col_na)){
+  res_cor <- cor(df[,],df[,],method="spearman")
+  
+  
+}
+
+
+```
+
+
+
 
 
