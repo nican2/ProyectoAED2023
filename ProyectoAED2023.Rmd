@@ -458,7 +458,7 @@ ggplot(df, aes(x = EDADEC, y = NHIJOS))+geom_point()
 
 <!-- Númerica - Categórica -->
 
-```{r edad_by_sexo}
+```{r edad_by_sexo, echo=FALSE, include = TRUE}
 p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
   geom_freqpoly(binwidth = 1) +
   labs(
@@ -473,7 +473,7 @@ p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
 p_edad
 ```
 
-```{r}
+```{r echo=FALSE, include=TRUE}
 ggplot(df, aes(x = TDOMEST, y = EDAD, colour = SEXO)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea"))
 ```
 
@@ -531,6 +531,14 @@ theme(
                 title.position = "top", title.hjust = 0.5))
 
 ```
+<!-- Cross Table Variables categóricas -->
+
+```{r}
+library(crosstable)
+ct1 = crosstable(df, c(SITLAB, COMPRAINT, TDOMEST), by=HIJOS, total="both", percent_pattern="{n} ({p_row}/{p_col})", percent_digits=0, funs=mean, effect=TRUE) %>% as_flextable()
+ct1
+```
+
 
 ### Resto de cosas hechas
 
@@ -623,23 +631,6 @@ p_boxplot_nacim <- ggplot(df, aes(x = NACIM, y = NHIJOS, fill = NACIM)) +
 p_boxplot_nacim
 ```
 Podemos observar que hay múltiples outliers, como consecuencia de que la inmensa mayoría de la gente suele estar dentro del rango intercuartílico para el número de hijos, siendo muy raro tener 6 hijos o más. Un tratamiento más riguroso para detectar las anomalías se realizará posteriormente.
-
-### Variables de tipo categórico
-
-```{r crosstable}
-library(gmodels)
-kable_crosstab <- knitr::kable(as.data.frame(CrossTable(df$ESTUDIOS, df$SITLAB)), format = "latex",
-             booktabs = TRUE, 
-             caption = "Tabla cruzada para comparar los estudios realizado con la situación laboral", 
-             align = 'ccc', centering = FALSE,
-             table.envir = "table",
-             tabular.environment = "tabularx")
-```
-
-```{r}
-
-```
-
 
 
 ```{r anadir_luego}
