@@ -481,6 +481,8 @@ ggplot(df, aes(x = TDOMEST, y = EDAD, colour = SEXO)) + geom_point(size = 0.25) 
 
 ### Caracterización
 
+<!-- Mapa de correlaciones -->
+
 ```{r}
 # Seleccionamos las variables numéricas del dataframe
 df_numericas <- df[sapply(df, is.numeric)]
@@ -504,7 +506,7 @@ upper_tri <- get_upper_tri(corr_mat)
 melted_upper_tri <- melt(upper_tri, na.rm = TRUE)
 ```
 
-```{r}
+```{r echo=FALSE, include=TRUE}
 ggplot(data = melted_upper_tri, aes(Var2, Var1, fill = value))+
  geom_tile(color = "white")+
  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
