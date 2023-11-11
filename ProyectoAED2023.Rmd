@@ -449,8 +449,27 @@ Como su nombre indica, la fase de análisis bivariante, consiste en la búsqueda
 
 ### Gráficos
 
-<!-- Númerica - Númerica -->
-Se podría hacer un gráfico de dispersión per no sale nada vistos
+#### Analisis entre dos variables numericas
+Un ejemplo de este tipo de analisis es el siguiente
+```{r}
+# Para una visualización sin na que no permiten visualizar los datos antes del tratamiento de
+# valores faltantes, se incluye lo siguiente
+
+df_sin_na <- df[complete.cases(df$EDAD, df$NHIJOS, df$SATISTIEMP), ]
+
+
+
+ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SATISTIEMP)) +
+  geom_jitter(data = subset(df, is.na(SATISTIEMP)),
+              aes(x = EDAD, y = NHIJOS),
+              color = "lightgreen",  # Color para los valores faltantes
+              size = 2, alpha = 0.05) +
+  geom_jitter(size = 2, alpha = 0.5) +
+  scale_color_gradient(low = "darkorchid4", high = "yellow") +
+  labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad", y = "Nº hijos")
+
+```
+
 
 
 <!-- Númerica - Categórica -->
@@ -471,7 +490,24 @@ p_edad
 ```
   <!-- En numérica categórica también iría el mapa -->
 
-<!-- Categórica - Categórica -->
+#### Analisis de una variable numérica frente a una categórica
+```{r}
+df_plot <- df
+levels(df_plot$CAMPO)
+
+etiquetas <- c( "Educ.","Artes","CC.SS","Negocios","Ciencias","Tec.",
+                "Arquit.","Agricult.","Salud","Otros","NA")
+
+
+ggplot(df_plot, aes(x = CAMPO, fill = SEXO)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Gráfico de Barras que relaciona Sexo y Campo de estudio", x = "Campo", y = "Frecuencia") +
+  scale_fill_manual(values = c("Hombre" = "blue", "Mujer" = "pink"), na.value = "grey") +
+  guides(fill = guide_legend(title = "Sexo"))+
+  scale_x_discrete(labels = etiquetas)
+
+```
+
 
   <!-- Aquí podríamos poner una gráfica de barras en las que cada barra la pinta de un color en función de otra varible categórica -->
 
