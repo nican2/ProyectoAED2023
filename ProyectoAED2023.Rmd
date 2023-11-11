@@ -194,7 +194,7 @@ df_2 <- read_dta("./data/ECEPOVhogar_2021.dta", col_select = columnas_a_leer)
 Las variables SEXO, NACIM y PNACIM de este nuevo dataset deben ser convertidas a sus tipos correspondientes, por lo que se hace uso de la información que proporciona el INE sobre dichas variables.
 
 ```{r lectura_diseno_2}
-ruta_excel_2 <- "data/dr_ECEPOVhogar_2021.xlsx"
+ruta_excel_2 <- "./data/dr_ECEPOVhogar_2021.xlsx"
 excel_info_2 <- read_excel(ruta_excel_2, sheet = "Diseño", range = "A2:H162", col_names = TRUE)
 
 # Cogemos los diccionarios manualmente puesto que solo tenemos 3 variables y el proceso es más eficiente en lectura
@@ -214,7 +214,8 @@ df_2 <- df_2 %>%
 Por último, para lograr la unión de ambos datasets, se emplea la función *merge* utilizando las variables de identificación IDEN, NPV y FACTOR, de tal manera que podamos establecer una relación unívoca entre los adultos presentes en el primer y segundo dataset.
 
 ```{r union_datasets}
-df_merged <- merge(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "NACIM", "PNACIM")], by = c("IDEN", "NPV", "FACTOR"), all.x = TRUE)
+# sin dplyr: df_merged <- merge(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "NACIM", "PNACIM")], by = c("IDEN", "NPV", "FACTOR"), all.x = TRUE)
+df_merged <- left_join(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "NACIM", "PNACIM")], by = c("IDEN", "NPV", "FACTOR"))
 ```
 
 ## Características generales de los datos
