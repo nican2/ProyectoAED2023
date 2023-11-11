@@ -55,7 +55,7 @@ El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nac
 # Configuración general de chunks
 library(knitr)
 options(width = 100)
-knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F)
+knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F, fig.width = 4.0, fig.height = 3, fig.align = "left")
 ```
 
 Primeramente, se cargan todas las librearías necesarias en las diferentes fases del proyecto.
@@ -63,7 +63,7 @@ Primeramente, se cargan todas las librearías necesarias en las diferentes fases
 ```{r librerias, message = F, include = T, echo = F}
 # Carga de librerías necesarias con pacman
 library(pacman)
-pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2)
+pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2, editrules)
 ```
 
 A continuación, se realiza la carga del conjunto de datos, presente tanto en *.txt* como *.csv* en la carpeta *./data* incluida en el repositorio del proyecto. Asimismo, se carga el fichero .xlsx que nos muestra el diseño de registro y valores válidos de las variables. Este fichero será especialmente útil, puesto que permitirá una automatización para convertir el conjunto de datos, que actualmente se encuentra en estado Raw data, a Technically correct data, teniendo cada variable su tipo correspondiente.
@@ -236,7 +236,7 @@ Tras un análisis de las variables en *dr_ECEPOVadultos_2021.xlsx* y
 data_info <- data.frame(
   Variable = c(
     "IDQ_PV", "TAM_MUNI", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD",
-    "EDADESTUD", "CAMPO", "SITLAB", "SATISTIEMP", "COMPRAINT", "HIJOS",
+    "EDADESTUD", "CAMPO", "SITLAB", "FLEXI", "LUGTRAB", "SATISTIEMP", "COMPRAINT", "HIJOS",
     "NHIJOS", "TDOMEST", "SEXO", "EDAD", "NACIM", "PNACIM"
   ),
   Descripción = c(
@@ -249,6 +249,8 @@ data_info <- data.frame(
     "Edad a la que alcanzó su mayor nivel de estudios.",
     "Campo de los estudios.",
     "Situación laboral durante la última semana.",
+    "¿Puede flexibilizar, adaptar o acomodar su jornada laboral?",
+    "Lugar de trabajo",
     "Grado de satisfacción en el tiempo de desplazamiento al trabajo.",
     "Realización de compras por internet en el último mes.",
     "Tenencia de hijos.",
@@ -269,7 +271,7 @@ knitr::kable(data_info, format = "latex",
 ```
 
 ```{r seleccion_variables}
-var_interes <- c("IDQ_PV", "TAM_MUNI", "SEXO", "EDAD", "NACIM", "PNACIM", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "SATISTIEMP", "COMPRAINT", "NHIJOS", "HIJOS", "TDOMEST")
+var_interes <- c("IDQ_PV", "TAM_MUNI", "SEXO", "EDAD", "NACIM", "PNACIM", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "FLEXI", "LUGTRAB", "SATISTIEMP", "COMPRAINT", "NHIJOS", "HIJOS", "TDOMEST")
   
 df <- df_merged %>%
   dplyr::select(var_interes)
@@ -277,6 +279,37 @@ df <- df_merged %>%
 
 ```{r glimpse_reducido}
 glimpse(df, width = 60)
+```
+En primer lugar, ahora que tenemos un conjunto más reducido, podemos cerciorarnos que algunas reglas se cumplen. Para ello, utilizamos el paquete **editrules**, para posteriormente aplicarlo sobre nuestro dataframe reducido, **df**.
+
+```{r reglas_vars}
+E <- editfile("./data/reglasER.txt")
+E
+
+# También puede hacerse con if, pero esto es más elegante
+```
+```{r violated_rules}
+ve <- violatedEdits(E, df)
+summary(ve)
+```
+El NULL obtenido indica que no se han encontrado datos que incumplan las reglas presentes en **./data/reglasER.txt**.
+
+
+## Análisis de datos faltantes en nuestro conjunto de interés
+
+Una representación precisa de cómo se distribuyen los *missing values* por nuestro conjunto de datos lo otorga la librería *VIM* con la función *aggr*. Se han representado solamente aquellas variables que cuentan con algún NA para facilitar la visualización. En el siguiente gráfico puede observarse tanto la proporción total de valores faltantes en dichas variables individualmente (izquierda), como una serie de combinaciones posibles entre ellas de valores faltantes. 
+
+Así, encontramos por ejemplo que la combinación de NA en (SATISTIEMP, ANOESTUD, EDADESTUD, CAMPO) cuenta con una proporción del 27.9 % de los datos totales.
+
+```{r missing_values, include = T, fig.width = 5.8, fig.height = 4, fig.align = "left"}
+aggr_result <- capture.output({
+  df %>%
+    select_if(~ anyNA(.)) %>%
+    aggr(prop = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE, cex.axis = 0.6, cex.lab = 0.7, digits = 1, gap = 2, cex.numbers = 0.6, plot = TRUE)
+})
+
+# Mostrar solo el plot sin el data.frame para el Rmd
+invisible(aggr_result)
 ```
 
 Seguidamente, mediante la función *summary* obtenemos información acerca de las características de cada columna del dataset. 
@@ -334,22 +367,7 @@ kable_res <- knitr::kable(SumarioDatos(data = df), format = "latex",
 kable_styling(kable_res, font_size = 7, position = "left")
 ```
 
-### Datos faltantes
 
-Una representación precisa de cómo se distribuyen los *missing values* por nuestro conjunto de datos lo otorga la librería *VIM* con la función *aggr*. Se han representado solamente aquellas variables que cuentan con algún NA para facilitar la visualización. En el siguiente gráfico puede observarse tanto la proporción total de valores faltantes en dichas variables individualmente (izquierda), como una serie de combinaciones posibles entre ellas de valores faltantes. 
-
-Así, encontramos por ejemplo que la combinación de NA en (SATISTIEMP, ANOESTUD, EDADESTUD, CAMPO) cuenta con una proporción del 27.9 % de los datos totales.
-
-```{r missing_values, include = T, fig.width = 5.8, fig.height = 4, fig.align = "left"}
-aggr_result <- capture.output({
-  df %>%
-    select_if(~ anyNA(.)) %>%
-    aggr(prop = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE, cex.axis = 0.6, cex.lab = 0.7, digits = 1, gap = 2, cex.numbers = 0.6, plot = TRUE)
-})
-
-# Mostrar solo el plot sin el data.frame para el Rmd
-invisible(aggr_result)
-```
 # Exploración inicial / visualización
 
 Una vez hemos asegurado que nuestros datos estén en la estructura de data.frame, tengan los valores correctamente etiquetados y estén almacenados con el tipo correcto, podemos empezar a buscar posibles patrones en las instancias o entre las características.
