@@ -12,26 +12,40 @@ type: article
 
 # front matter
 simplesummary: |
-  En este proyecto de Análisis Exploratorio de Datos se explora un conjunto de datos real con el fin de obtener valiosas perspectivas y conclusiones.
+  En este proyecto de Análisis Exploratorio de Datos se explora un conjunto de 
+  datos real con el fin de obtener valiosas perspectivas y conclusiones.
+  
 abstract: |
   
-  A single paragraph of about 200 words maximum. For research articles, 
-  abstracts should give a pertinent overview of the work. We strongly encourage
-  authors to use the following style of structured abstracts, but without 
-  headings: 1) Background: Place the question addressed in a broad context and
-  highlight the purpose of the study; 2) Methods: Describe briefly the main
-  methods or treatments applied; 3) Results: Summarize the article's main 
-  findings; and 4) Conclusion: Indicate the main conclusions or interpretations. 
-  The abstract should be an objective representation of the article, it must not 
-  contain results which are not presented and substantiated in the main text and 
-  should not exaggerate the main conclusions.
+  Nowadays, data has become a very powerful tool. By collecting, processing 
+  and utilizing data, companies gain multiple benefits, both economic and 
+  strategic. Such is te potencial of data that in recent decades, a large
+  number of companies have emerged and grown, focusing their activities solely
+  on data management. Through the implementation of this project, the aim is 
+  to put into practice the concepts learned in the Exploratory Data Analysis
+  subject of the master's degree in Data Science. The project consists of
+  various stages. Firstly, the search for a suitable dataset. Next, the
+  loading of the dataset to be able to work with it in the programing language
+  in which the project has been carried out. Thirdly, the generation of
+  different graphs and tables to examine the characteristics of the study data,
+  as well as the analysis of anomalies in the dataset. As a result of the
+  analysis, information has been obtained regarding the different magnitudes
+  and relationships existing between the variables studied. Finally, through
+  the completion of this project, it has been possible to understand the
+  different phases and methodologies for conducting an exploratory data 
+  analysis.
   
 # back matter
 keywords: |
+
   Análisis exploratorio de datos; Patrones en datos; Encuesta de población; Limpieza de datos
+  
 acknowledgement: |
+
   Es necesario mostrar nuestro agradecimiento a ValgrAI por el apoyo en el pago de la matrícula para el Máster en Ciencia de Datos (UV). Además, no nos podemos olvidar del profesorado que nos permitirá formarnos en este ámbito.
+  
 authorcontributions: |
+
   Aquí tenemos que poner más o menos lo que ha participado cada uno.
 abbreviations:
   - short: AED
