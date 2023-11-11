@@ -133,10 +133,6 @@ manual_change <- c("ESTUDIOS", "CAMPO", "NDESPLA", "MTRANSPOR_1", "MTRANSPOR_2")
 df_1 <- df_1 %>%
   mutate(across(all_of(manual_change), ~ str_remove_all(., " ")))
 
-# Codificamos los NA de la variable NHIJOS como 0, ya que nos será útil más tarde esta interpretación
-
-df_1 <- df_1 %>%
-  mutate(NHIJOS = ifelse(is.na(NHIJOS), 0, NHIJOS))
 
 # Conversión de las variables correspondientes a tipo numérico según indica INE
 
@@ -295,24 +291,96 @@ summary(ve)
 El NULL obtenido indica que no se han encontrado datos que incumplan las reglas presentes en **./data/reglasER.txt**.
 
 
-## Análisis de datos faltantes en nuestro conjunto de interés
+## Análisis de missing data en nuestro conjunto de interés
 
 Una representación precisa de cómo se distribuyen los *missing values* por nuestro conjunto de datos lo otorga la librería *VIM* con la función *aggr*. Se han representado solamente aquellas variables que cuentan con algún NA para facilitar la visualización. En el siguiente gráfico puede observarse tanto la proporción total de valores faltantes en dichas variables individualmente (izquierda), como una serie de combinaciones posibles entre ellas de valores faltantes. 
 
-Así, encontramos por ejemplo que la combinación de NA en (SATISTIEMP, ANOESTUD, EDADESTUD, CAMPO) cuenta con una proporción del 27.9 % de los datos totales.
+Así, encontramos por ejemplo que la combinación de NA en (SATISTIEMP, FLEXI, ANOESTUD, EDADESTUD, CAMPO, LUGTRAB, EDADEC) cuenta con una proporción del 26 % de los datos totales.
 
 ```{r missing_values, include = T, fig.width = 5.8, fig.height = 4, fig.align = "left"}
 aggr_result <- capture.output({
   df %>%
     select_if(~ anyNA(.)) %>%
-    aggr(prop = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE, cex.axis = 0.6, cex.lab = 0.7, digits = 1, gap = 2, cex.numbers = 0.6, plot = TRUE)
+    aggr(prop = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE, cex.axis = 0.6, cex.lab = 0.7, digits = 1, gap = 1.5, cex.numbers = 0.6, plot = TRUE)
 })
 
 # Mostrar solo el plot sin el data.frame para el Rmd
 invisible(aggr_result)
 ```
+Podemos observar en el gráfico de la izquierda que hay proporciones de missings que parecen repetirse. Esto nos da pie a plantearnos si acaso existe una razón tras ellos más allá de la pura aleatoriedad (*missing completely at random*). Quizás existen variables observadas en nuestro conjunto de datos que según tengan un valor u otro inducen un *NA* en otras variables...
 
-Seguidamente, mediante la función *summary* obtenemos información acerca de las características de cada columna del dataset. 
+Esta cuestión puede hacerse frente utilizando la información adicional que INE nos proporciona para la base de datos. En este caso, haremos uso del [cuestionario](https://www.ine.es/metodologia/cuestionario_ECEPOV.pdf) dado. Se llega a las siguientes conclusiones:
+
+
+- Si la variable **EC** (*Estado civil*) es "Soltero/a" $\Rightarrow$ la variable **EDADEC** debe contener un *NA*.
+
+- Si la variable **ESTUDIOS** es una de estas: "No sabe leer o escribir", "Sabe leer y escribir pero fue menos de 5 años a la escuela", "Educación primaria completa o fue a la escuela al menos 5 años", "Primera etapa de educación secundaria y similar (EGB, Bachiller elemental, ESO, certificado de Estudios Primarios, certificado de Escolaridad o certificado de Profesionalidad niveles 1 o 2)" $\Rightarrow$ las variables **ANOESTUD**, **EDADESTUD** y **CAMPO** deben contener un *NA*.
+
+- Si la variable **SITLAB** (*Situación laboral actual*) es **distinta** de "Ocupado/a" (a tiempo completo o a tiempo parcial) $\Rightarrow$ la variable **FLEXI** (*Flexibilidad en el horario de trabajo*) se pone como *NA*, automáticamente.
+
+- Por otra parte, de manera relacionada a la anterior, la variable **SATISTIEMP** puede aparecer con un valor distinto de *NA* solo si la categoría de **SITLAB** es "Ocupado/a" (a tiempo completo o a tiempo parcial) o "Estudiante" *Y* además la variable **LUGTRAB** es distinta de "En el propio domicilio" o "En varios municipios (soy comercial, repartidor, taxista...)". 
+
+- La variable **NHIJOS** (*número de hijos*) se pone como NA si y solo si la variable booleana **HIJOS** (¿ha tenido hijos?) está en "No".
+
+**Nota**: es importante recalcar que en el propio cuestionario se pedía que a las personas encuestadas que estuvieran *teletrabajando* debido al COVID-19 respondieran teniendo en cuenta su situación anterior. 
+
+Esta serie de conclusiones de pertenencia de NA o no se comprueban en R.
+
+```{r verify_missing}
+verif_EC <- sum(df$EC == "Soltero/a" & !is.na(df$EDADEC)) == 0 & sum((is.na(df$EDADEC) & df$EC != "Soltero/a")) == 0
+
+
+vec <- c(
+    "No sabe leer o escribir",
+    "Sabe leer y escribir pero fue menos de 5 años a la escuela",
+    "Educación primaria completa o fue a la escuela al menos 5 años",
+    "Primera etapa de educación secundaria y similar (EGB, Bachiller elemental, ESO, certificado de Estudios Primarios, certificado de Escolaridad o certificado de Profesionalidad niveles 1 o 2)"
+  )
+
+verif_ESTUD <- sum(
+  df$ESTUDIOS %in% vec & (!is.na(df$ANOESTUD) | !is.na(df$EDADESTUD) | !is.na(df$CAMPO))) == 0 & sum(
+  !df$ESTUDIOS %in% vec & (is.na(df$ANOESTUD) | is.na(df$EDADESTUD) | is.na(df$CAMPO))) == 0
+
+
+# más simple  -> ver si son iguales las sumas (no estrictamente correcto, pero sí muy probable.)
+
+#all(sum(df$ESTUDIOS %in% vec) == sum(is.na(df$ANOESTUD)) && sum(df$ESTUDIOS %in% vec) == sum(is.na(df$EDADESTUD)) && sum(df$ESTUDIOS %in% vec) == sum(is.na(df$CAMPO)))
+
+vec <- c("Ocupado/a - A tiempo completo", "Ocupado/a - A tiempo parcial")
+
+verif_SITLAB <- sum(!df$SITLAB %in% vec) == sum(is.na(df$FLEXI))
+
+
+vec <- c("Ocupado/a - A tiempo completo", "Ocupado/a - A tiempo parcial", "Estudiante")
+vec2 <- c("En el propio domicilio", "En varios municipios (soy comercial, repartidor, taxista…)")
+
+verif_SATISTIEMP <- sum(!df$SITLAB %in% vec & !df$LUGTRAB %in% vec2) + sum(df$SITLAB %in% vec & df$LUGTRAB %in% vec2) == sum(is.na(df$SATISTIEMP))
+
+verif_HIJOS <- sum(df$HIJOS == "No") == sum(is.na(df$NHIJOS) | df$NHIJOS == 0) # añadido lo de NHIJOS == 0 para que cuando se modifique df siga funcionando (ver siguiente chunk)
+
+
+if (all(verif_EC, verif_ESTUD, verif_SITLAB, verif_SATISTIEMP, verif_HIJOS)) {
+  print("Todas las condiciones se satisfacen, tal y como menciona el INE.")
+} else {
+  print("Alguna condición no se ha satisfecho.")
+}
+
+# Todas se satisfacen. Si sale que no es porque df se ha visto modificado.
+```
+Habiéndose cumplido lo que prometía el INE podemos asegurar que en nuestro conjunto de datos (al menos en nuestras variables seleccionadas de interés) no hay ningún ningún valor que se haya perdido estrictamente. Todos los NA responden a que determinadas variables (presentes en el dataset) toman un valor u otro.
+
+En nuestro análisis, hemos decidido que los únicos valores *NA* que pueden cobrar sentido y ser imputados son los de la variable **NHIJOS**, ya que consideramos que con 16 años (edad mínima en nuestro conjunto de datos) este valor no tendría por qué ser siempre 0. Esto permitirá que en las gráficas de NHIJOS el mínimo no sea 1, sino 0.
+
+
+```{r imputacion_NHIJOS}
+# Codificamos los NA de la variable NHIJOS como 0, ya que nos será útil más tarde esta interpretación
+df <- df %>%
+  mutate(NHIJOS = ifelse(is.na(NHIJOS), 0, NHIJOS))
+```
+
+Ahora que tenemos datos consistentes podemos empezar a extraer conocimiento sobre nuestro conjunto de datos.
+
+En primer lugar, mediante la función *summary*, obtenemos información acerca de las características de cada variable del dataset. 
 
 ```{r summary}
 summary(df)
@@ -329,7 +397,7 @@ SumarioDatos <- function(data = data, digitos = 3, max_topLevel_length = 47) {
     colnames(t(which.max(t)))
   })
 
-  # Truncate topLevel and add "..." if it exceeds the maximum length
+  # Añadir puntos suspensivos si supera cierta longitud (para que quepa en la hoja)
   topLevel <- ifelse(nchar(topLevel) > max_topLevel_length, paste0(substr(topLevel, 1, max_topLevel_length - 3), "..."), topLevel)
 
   topCount <- sapply(data, function(x) { max(table(x)) })
