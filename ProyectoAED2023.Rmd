@@ -228,7 +228,7 @@ dplyr::glimpse(df_merged, width = 60)
 Se observa que es un dataset con total de 361934 observaciones y con 52 variables, lo cual es mucho más de lo que se puede abarcar en un análisis exploratorio como el que se requiere en este trabajo.
 
 Tras un análisis de las variables en *dr_ECEPOVadultos_2021.xlsx* y  
-*dr_ECEPOVhogar_2021.xlsx*, se ha considerado que muchas de las variables no nos otorgarán interés para el análisis que particularmente se desea aplicar, por lo que se seleccionaran aquellasvariables consideradas más relevantes.
+*dr_ECEPOVhogar_2021.xlsx*, se ha considerado que muchas de las variables no nos otorgarán interés para el análisis que particularmente se desea aplicar, por lo que se seleccionarán aquellas variables consideradas más relevantes.
 
 
 ```{r variables_usadas, include = T}
@@ -451,6 +451,32 @@ Como su nombre indica, la fase de análisis bivariante, consiste en la búsqueda
 
 <!-- Númerica - Númerica -->
 Se podría hacer un gráfico de dispersión per no sale nada vistos
+<!-- Por usar uno se podria usar el siguiente (no hay muchas mas variables) -->
+
+```{r}
+# Para una visualización sin na que no permiten visualizar los datos antes del tratamiento de
+# valores faltantes, se incluye lo siguiente
+
+df_sin_na <- df[complete.cases(df$EDAD, df$NHIJOS, df$SATISTIEMP), ]
+
+ggplot(data=df_sin_na, aes(x = EDAD, y = NHIJOS, color = SATISTIEMP)) +
+  geom_jitter(size = 2, alpha=0.5) +  # Añade jittering
+  scale_color_gradient(low = "darkorchid4", high = "yellow")+
+  labs(title = "Relación entre edad nº de hijos y satisfacción", x = "Edad", y = "Nº hijos")
+
+
+ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SATISTIEMP)) +
+  geom_jitter(data = subset(df, is.na(SATISTIEMP)),
+              aes(x = EDAD, y = NHIJOS),
+              color = "lightgreen",  # Color para los valores faltantes
+              size = 2, alpha = 0.05) +
+  geom_jitter(size = 2, alpha = 0.5) +
+  scale_color_gradient(low = "darkorchid4", high = "yellow") +
+  labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad", y = "Nº hijos")
+
+```
+En el podemos observar información acerca del dataframe como el hecho de que no existen una gran cantidad de instancias en nuestro conjunto de datos tales que para para edades elevadas contengan valores acerca de su satisfacción acerca de las compras online, a pesar de haber instancias con edades elevadas.  Asimismo, se puede pbservar que un número elevado de hijos podría estar asociado con una probabilidad mayor de que la satisfacción sea calificada como muy negativa.
+
 
 
 <!-- Númerica - Categórica -->
@@ -472,6 +498,247 @@ p_edad
   <!-- En numérica categórica también iría el mapa -->
 
 <!-- Categórica - Categórica -->
+
+Para la relación entre variables categoricas, se decide usar un diagrama de mosaico
+```{r}
+library(ggmosaic)
+
+df_sin_na <- df[complete.cases(df$CAMPO, df$SITLAB), ]
+
+ggplot(data=df_sin_na) +
+  geom_mosaic(aes(x = product(CAMPO, SITLAB))) +
+  labs(title = "Mosaic Plot", x = "Variable 1", y = "Variable 2")
+
+library(stringr)
+wrapped_labels <- str_wrap(levels(df_sin_na$CAMPO), width = 10)  # Adjust width as needed
+
+ggplot(df_sin_na) +
+  geom_mosaic( aes(x = product(CAMPO, SITLAB))) +
+  labs(title = "Mosaic Plot", x = "Variable 1", y = "Variable 2") +
+  theme(plot.margin = margin(1, 1, 1, 1, "cm")) +
+  scale_x_discrete(labels = wrapped_labels)
+
+
+
+df_sin_na <- df[complete.cases(df$CAMPO, df$SITLAB), ]
+
+wrapped_labels_CAMPO <- str_wrap(levels(df_sin_na$CAMPO), width = 10)
+wrapped_labels_SITLAB <- str_wrap(levels(df_sin_na$SITLAB), width = 10)
+
+ggplot(data = df_sin_na, aes(x = CAMPO, y = SITLAB)) +
+  geom_tile(stat = "identity") +
+  labs(title = "Mosaic Plot", x = "Variable 1", y = "Variable 2") +
+  scale_x_discrete(labels = wrapped_labels_CAMPO) +
+  scale_y_discrete(labels = wrapped_labels_SITLAB) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+#sapply(df,function(x){ifelse(is.factor(x),length(unique(x)),0)})
+
+
+df_sin_na$combined <- interaction(df_sin_na$CAMPO, df_sin_na$SITLAB)
+
+# Create wrapped versions of the labels
+wrapped_labels_combined <- str_wrap(levels(df_sin_na$combined), width = 10)
+
+ggplot(data = df_sin_na, aes(x = "", y = combined, fill = ..count..)) +
+  geom_mosaic() +
+  labs(title = "Mosaic Plot", x = "Variable 1", y = "Variable 2") +
+  scale_y_discrete(labels = wrapped_labels_combined)
+
+
+library(vcd)
+df_plot <-df[, c("CAMPO", "SITLAB", "EDAD")]
+
+df_plot_tab <- xtabs(EDAD ~ CAMPO + SITLAB, data=df_plot)
+
+largs <- list(set_varnames=list(CAMPO="Campo", 
+                                SITLAB="Situacion"),
+              abbreviate=10)
+gargs <- list(interpolate=c(1,2,4,8))
+
+mosaic(df_plot_tab, 
+  shade=TRUE, 
+  labeling_args=largs, 
+  gp_args=gargs,
+  main="Alphabetic order", 
+  legend=FALSE, 
+  rot_labels=c(20,90,0,70))
+
+
+
+df_plot <- df[, c("CAMPO", "SITLAB", "EDAD")]
+
+# Crear la tabla de contingencia
+df_plot_tab <- xtabs(EDAD ~ CAMPO + SITLAB, data=df_plot)
+
+# Configurar parámetros para el gráfico
+largs <- list(set_varnames=list(CAMPO="Campo", 
+                                SITLAB="Situacion"),
+              abbreviate=10)  # Ajustar el número para acortar más o menos los niveles
+gargs <- list(interpolate=c(1,2,4,8))
+par(mfrow=c(1,1), mar=c(5,5,20,20))
+# Crear el gráfico de mosaico
+mosaic(df_plot_tab, 
+       shade=TRUE, 
+       labeling_args=largs, 
+       gp_args=gargs,
+       main="", 
+       legend=FALSE, 
+       spacing=c(5,5,5,5),
+       rot_labels=c(90,90,0,70))
+
+```
+
+
+```{r}
+library(vcd)
+
+# Configurar el tamaño del gráfico
+par(mfrow=c(1,1),  mar=c(8,8,4,2), oma=c(4,4,0,0))
+
+# Subconjunto de datos
+df_plot <- df[, c("CAMPO", "SITLAB", "EDAD")]
+
+# Crear la tabla de contingencia
+df_plot_tab <- xtabs(EDAD ~ CAMPO + SITLAB, data=df_plot)
+
+# Configurar parámetros para el gráfico
+largs <- list(set_varnames=list(CAMPO="Campo", 
+                                SITLAB="Situacion"),
+              abbreviate=10)  # Ajustar el número para acortar más o menos los niveles
+gargs <- list(interpolate=c(1,2,4,8))
+
+# Aumentar el espacio entre las etiquetas del eje y los valores
+mosaic(df_plot_tab, 
+       shade=TRUE, 
+       labeling_args=largs, 
+       gp_args=gargs,
+       main="Relacion campo-siutación laboral-edad", 
+       legend=FALSE, 
+       rot_labels=c(85,90,0,0),
+       
+       )  # Ajustar los valores según sea necesario
+
+
+
+mosaicplot(table(df$EC, df$SITLAB, df$SEXO),
+           main = "Gráfico de Mosaico",
+           color = TRUE)
+
+```
+
+```{r}
+ggplot(df, aes(x = CAMPO, fill = SEXO)) +
+  geom_bar(position = "stack") +
+  labs(title = "Relaciones entre el campo y el sexo",
+       x = "Campo",
+       y = "Total") +
+  theme(axis.text.x = element_text(hjust = 1))
+
+ggplot(df, aes(x = CAMPO, fill = SEXO)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Gráfico de Barras por Sexo y Campo", x = "Campo", y = "Frecuencia") +
+  scale_fill_manual(values = c("Hombre" = "blue", "Mujer" = "pink"), na.value = "grey")  # Puedes personalizar los colores según tus preferencias
+
+
+etiquetas_personalizadas <- c("etiqueta1", "etiqueta2", "etiqueta3", ...)
+
+
+df_plot <- df
+levels(df_plot$CAMPO)
+
+etiquetas <- c( "Educ.","Artes","CC.SS","Negocios","Ciencias","Tec.",
+                "Arquit.","Agricult.","Salud","Otros","NA")
+
+
+ggplot(df_plot, aes(x = CAMPO, fill = SEXO)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Gráfico de Barras que relaciona Sexo y Campo de estudio", x = "Campo", y = "Frecuencia") +
+  scale_fill_manual(values = c("Hombre" = "blue", "Mujer" = "pink"), na.value = "grey") +
+  guides(fill = guide_legend(title = "Sexo"))+
+  scale_x_discrete(labels = etiquetas)
+
+
+
+
+```
+
+```{r}
+df_cl <- df[,c("EDAD","SATISTIEMP","ANOESTUD")]
+
+df_cl <- na.omit(df_cl)
+df_cl_scaled <- scale(df_cl)
+
+n_clusters <- 20
+clusters <- kmeans(df_cl_scaled, centers = n_clusters)
+datos_con_clusters <- cbind(df_cl, cluster = as.factor(clusters$cluster))
+
+cluster_ins <- clusters$cluster
+centroides <- clusters$centers
+
+distancias <- sapply(1:nrow(df_cl),function(x){
+  return(sum(abs(df_cl_scaled[x]-centroides[cluster_ins[x]])))
+})
+
+df_cl<- df_cl %>%
+  mutate(clust = as.factor(clusters$cluster))
+
+ggplot(df_cl, aes(x=EDAD, y=SATISTIEMP, alpha=0.5,color = clust)) +
+  geom_jitter() +
+  labs(title = "Gráfico de Clustering",
+       x = "Variable X",
+       y = "Variable Y",
+       color = "Cluster")
+
+df_cl<- df_cl %>%
+  mutate(dist=(distancias>1.5),clust = as.factor(clusters$cluster))%>%
+  filter(dist==T)
+
+
+ggplot(df_cl, aes(x=EDAD, y=SATISTIEMP,alpha=ANOESTUD, color = clust)) +
+  geom_jitter() +
+  labs(title = "Valores atipicos detectados",
+       x = "Edad",
+       y = "Satisfaccion compras online",
+       alpha="Año estudio",
+       color = "Cluster")+
+  theme_classic()
+
+```
+
+```{r}
+
+df_copia <- na.omit(df[,c("HIJOS","COMPRAINT","TAM_MUNI","EC")])
+df_encoded <- data.frame(model.matrix(~ . - 1, data = df_copia))
+head(df_encoded)
+colnames(df_encoded)
+
+# Nota: encontrar el mejor n_clusters que se adapte a los datos
+n_clusters <- 30
+clusters <- kmeans(df_encoded, centers = n_clusters)
+datos_con_clusters <- cbind(df_copia, cluster = as.factor(clusters$cluster))
+
+cluster_ins <- clusters$cluster
+centroides <- clusters$centers
+
+
+distancias <- sapply(1:nrow(df_copia),function(x){
+  return(sum(abs(df_encoded[x,]-centroides[cluster_ins[x],])))
+})
+
+
+df_copia<- df_copia %>%
+  mutate(dist=(distancias),clust = as.factor(clusters$cluster))
+
+
+#df_extremo<- df_copia %>%
+  #filter(dist>_valor_)
+
+#head(df_extremo)
+
+
+```
+
+
 
   <!-- Aquí podríamos poner una gráfica de barras en las que cada barra la pinta de un color en función de otra varible categórica -->
 
