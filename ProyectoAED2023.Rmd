@@ -449,8 +449,27 @@ Como su nombre indica, la fase de análisis bivariante, consiste en la búsqueda
 
 ### Gráficos
 
-<!-- Númerica - Númerica -->
-Se podría hacer un gráfico de dispersión per no sale nada vistos
+#### Analisis entre dos variables numericas
+Un ejemplo de este tipo de analisis es el siguiente
+```{r}
+# Para una visualización sin na que no permiten visualizar los datos antes del tratamiento de
+# valores faltantes, se incluye lo siguiente
+
+df_sin_na <- df[complete.cases(df$EDAD, df$NHIJOS, df$SATISTIEMP), ]
+
+
+
+ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SATISTIEMP)) +
+  geom_jitter(data = subset(df, is.na(SATISTIEMP)),
+              aes(x = EDAD, y = NHIJOS),
+              color = "lightgreen",  # Color para los valores faltantes
+              size = 2, alpha = 0.05) +
+  geom_jitter(size = 2, alpha = 0.5) +
+  scale_color_gradient(low = "darkorchid4", high = "yellow") +
+  labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad", y = "Nº hijos")
+
+```
+
 
 
 <!-- Númerica - Categórica -->
@@ -471,7 +490,24 @@ p_edad
 ```
   <!-- En numérica categórica también iría el mapa -->
 
-<!-- Categórica - Categórica -->
+#### Analisis de una variable numérica frente a una categórica
+```{r}
+df_plot <- df
+levels(df_plot$CAMPO)
+
+etiquetas <- c( "Educ.","Artes","CC.SS","Negocios","Ciencias","Tec.",
+                "Arquit.","Agricult.","Salud","Otros","NA")
+
+
+ggplot(df_plot, aes(x = CAMPO, fill = SEXO)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Gráfico de Barras que relaciona Sexo y Campo de estudio", x = "Campo", y = "Frecuencia") +
+  scale_fill_manual(values = c("Hombre" = "blue", "Mujer" = "pink"), na.value = "grey") +
+  guides(fill = guide_legend(title = "Sexo"))+
+  scale_x_discrete(labels = etiquetas)
+
+```
+
 
   <!-- Aquí podríamos poner una gráfica de barras en las que cada barra la pinta de un color en función de otra varible categórica -->
 
@@ -640,5 +676,116 @@ df %>%
 ```
 
 Nota: meter mapa por provincias.
+
+
+
+
+## Busqueda de outliers multivariante
+Se implementan algoritmos de clustering(kmeans) para detectar instancias atipicas dentro del conjunto de datos
+
+
+
+
+
+Para variables numericas los outliers se obtienen de la siguiente forma:
+```{r}
+# Se crea una copia del df donde se seleccionan las columnas deseadas
+df_cl <- df[,c("EDAD","SATISTIEMP","ANOESTUD")]
+
+df_cl <- na.omit(df_cl)
+#Se normalizan para poder usar kmeans
+df_cl_scaled <- scale(df_cl)
+
+#Se defiune un numero de clusters, uqe debera ser ajustado para 
+# caputrar de forma correcta los outliers
+n_clusters <- 20
+clusters <- kmeans(df_cl_scaled, centers = n_clusters)
+
+#Se añade al df la columna que indica a cada instancia el cluster
+datos_con_clusters <- cbind(df_cl,cluster=as.factor(clusters$cluster))
+
+cluster_ins <- clusters$cluster
+centroides <- clusters$centers
+
+# Se calculan las distancias mediante programacion funcional
+distancias <- sapply(1:nrow(df_cl),function(x){
+  return(sum(abs(df_cl_scaled[x]-centroides[cluster_ins[x]])))
+})
+
+#Se añade al df original el cluster al que pertenece
+df_cl<- df_cl %>%
+  mutate(clust = as.factor(clusters$cluster))
+
+#Se plotea, coloreando en funcion del cluster
+ggplot(df_cl,aes(x=EDAD, y=SATISTIEMP, alpha=0.5,color=clust)) +
+  geom_jitter() +
+  labs(title = "Gráfico de Clustering",
+       x="Variable X",
+       y="Variable Y",
+       color="Cluster")
+
+#Se filtran a partir de una distancia que debe ser definida, que permita obtener un numero
+# de outliers deseados
+df_cl<- df_cl %>%
+  mutate(dist=(distancias>1.5),clust = as.factor(clusters$cluster))%>%
+  filter(dist==T)
+
+# Se plotean los solo los considerados como outliers
+ggplot(df_cl, aes(x=EDAD,y=SATISTIEMP,alpha=ANOESTUD,color=clust)) +
+  geom_jitter() +
+  labs(title = "Valores atipicos detectados",x = "Edad",
+       y="Satisfaccion compras online",
+       alpha="Año estudio",color="Cluster")+
+  theme_classic()
+
+```
+
+
+Para categoricas el estudio es el sigueinte:
+```{r}
+# Se genera un df donde realizar los cambios
+df_copia <- na.omit(df[,c("HIJOS","COMPRAINT","TAM_MUNI","EC")])
+
+#Se aplica one hot encoding en este caso en todas las variables
+df_encoded <- data.frame(model.matrix(~ . - 1, data = df_copia))
+#head(df_encoded)
+#colnames(df_encoded)
+
+# Nota: encontrar el mejor n_clusters que se adapte a los datos
+n_clusters <- 30
+
+#Se calcuan los clusters
+clusters <- kmeans(df_encoded, centers = n_clusters)
+datos_con_clusters <- cbind(df_copia, cluster=as.factor(clusters$cluster))
+
+cluster_ins <- clusters$cluster
+centroides <- clusters$centers
+
+#Se calcula la distancia mediante prograamacion funcional, de mayor rapidez que usando un bucle
+distancias <- sapply(1:nrow(df_copia),function(x){
+  return(sum(abs(df_encoded[x,]-centroides[cluster_ins[x],])))
+})
+
+# Se añaden las distancias al df inicial
+df_copia<- df_copia %>%
+  mutate(dist=(distancias),clust=as.factor(clusters$cluster))
+
+#Es necesario encontrar una combinacion de numero de clusters y de d que permita obtener una cantidad de instancias reducidas que puedan considerarse
+
+# Se busca una distancia d que al hacer sum(distancias>d) sea un valor bajo, que indica el numero de outliers 
+
+#Se filtra y se obtienen solo los outliers
+#df_extremo<- df_copia %>%
+  #filter(dist>_d_)
+
+
+#Se visualizan solo los outliers, se podia usar otra funcion en lugar de head
+#head(df_extremo)
+
+
+```
+
+
+
 
 
