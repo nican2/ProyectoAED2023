@@ -14,6 +14,7 @@ type: article
 simplesummary: |
   En este proyecto de Análisis Exploratorio de Datos se explora un conjunto de 
   datos real con el fin de obtener valiosas perspectivas y conclusiones.
+  
 abstract: |
   
   Nowadays, data has become a very powerful tool. By collecting, processing 
@@ -37,7 +38,7 @@ abstract: |
 # back matter
 keywords: |
 
-  Gráfico; Variable; Relación, Dato; Estadístico; Información
+  Análisis exploratorio de datos; Patrones en datos; Encuesta de población; Limpieza de datos
   
 acknowledgement: |
 
