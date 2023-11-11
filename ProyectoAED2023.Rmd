@@ -55,7 +55,7 @@ El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nac
 # Configuración general de chunks
 library(knitr)
 options(width = 100)
-knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F, fig.width = 4.0, fig.height = 3, fig.align = "left")
+knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F, fig.width = 5.0, fig.height = 4, fig.align = "left")
 ```
 
 Primeramente, se cargan todas las librearías necesarias en las diferentes fases del proyecto.
@@ -297,11 +297,11 @@ Una representación precisa de cómo se distribuyen los *missing values* por nue
 
 Así, encontramos por ejemplo que la combinación de NA en (SATISTIEMP, FLEXI, ANOESTUD, EDADESTUD, CAMPO, LUGTRAB, EDADEC) cuenta con una proporción del 26 % de los datos totales.
 
-```{r missing_values, include = T, fig.width = 5.8, fig.height = 4, fig.align = "left"}
+```{r missing_values, include = T, fig.width = 5.9, fig.height = 5, fig.align = "left"}
 aggr_result <- capture.output({
   df %>%
     select_if(~ anyNA(.)) %>%
-    aggr(prop = TRUE, numbers = TRUE, sortVars = TRUE, sortCombs = TRUE, cex.axis = 0.6, cex.lab = 0.7, digits = 1, gap = 1.5, cex.numbers = 0.6, plot = TRUE)
+    aggr(prop = TRUE, numbers = TRUE, sortVars = TRUE, combined = FALSE, sortCombs = TRUE, cex.axis = 0.6, cex.lab = 0.7, digits = 1, gap = 0, cex.numbers = 0.6, plot = TRUE, ylabs = c("Proporción de missings", ""))
 })
 
 # Mostrar solo el plot sin el data.frame para el Rmd
@@ -438,7 +438,7 @@ kable_styling(kable_res, font_size = 7, position = "left")
 
 # Exploración inicial / visualización
 
-Una vez hemos asegurado que nuestros datos estén en la estructura de data.frame, tengan los valores correctamente etiquetados y estén almacenados con el tipo correcto, podemos empezar a buscar posibles patrones en las instancias o entre las características.
+Una vez hemos asegurado que nuestros datos estén en la estructura de data.frame, tengan los valores correctamente etiquetados y estén almacenados con el tipo correcto, así como de conocer el origen de los NA, podemos empezar a buscar posibles patrones en las instancias o entre las características.
 
 ## Análisis univariante.
 
@@ -446,7 +446,7 @@ Distinguiremos el análisis entre las variables de tipo numérico y las de tipo 
 
 ### Variables de tipo numérico
 
-Se ha creado una función para poder obtener diferentes estadísticos de las variables numéricas. Dichos estadisticos se representan mediante la siguiente tabla.
+Se ha creado una función para poder obtener diferentes estadísticos de las variables numéricas. Dichos estadisticos se representan mediante la siguiente tabla. Nótese que emplear el argumento *na.rm = TRUE* tiene sentido, tal y como se ha demostrado anteriormente.
 
 ```{r summarise_numeric}
 df_sumnum <- df %>%
@@ -476,7 +476,7 @@ kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRU
 
 Para completar el análisis univariante de las variables numéricas, se ha generado el siguiente gráfico. Que se corresponde con el histograma de la variable *EDAD* y con la correspondiente densidad de los datos.
 
-```{r echo=FALSE, include=TRUE}
+```{r edad_histogram, echo = FALSE, include = TRUE, fig.width = 6, fig.height = 3, fig.align = "center", fig.cap = "Distribución de edades para la encuesta con la curva gaussiana"}
 # Calcular la media y la desviación estándar de la variable "EDAD"
 
 media_edad <- mean(df$EDAD)
@@ -499,17 +499,34 @@ p_edad_histogram_density <- ggplot(df, aes(x = EDAD)) +
   stat_function(
     fun = dnorm,  # Función de densidad de probabilidad normal
     args = list(mean = media_edad, sd = desviacion_edad),
-    color = "red",
-    size = 1
-  )
+    aes(color = "Curva de densidad normal"),
+    size = 1,
+    show.legend = TRUE
+  ) +
+  
+  scale_color_manual(values = "red", name = "Curvas")
+
 
 p_edad_histogram_density
 ```
-Mediante el gráfico anterior, se aprecia que las edades más fracuentes en el dataset van de 40 a 60 años. 
+Mediante el gráfico anterior, se aprecia que las edades más fracuentes en el dataset van de 40 a 60 años. Apreciamos además que en cierta parte la concordancia con una gaussiana es clara, yéndose esta hacia las colas.
+
+```{r qqplot, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Q-Q plot para la variable EDAD."}
+
+qqplot_edad <- ggplot(df, aes(sample = EDAD)) +
+  geom_qq() +
+  geom_qq_line() +
+  ggtitle("QQ Plot para la variable EDAD") +
+  xlab("Cuantiles normales teóricos") +
+  ylab("Edad / años") + 
+  theme_minimal()
+
+qqplot_edad
+```
 
 ### Variables de tipo categórico
 
-A diferencia de las variables numérica, en las variables categóricas no es posible obtener muchos estadísticos. El más común es la moda, que se corresponde con la columna *topCount* de la tabla 2.
+A diferencia de las variables numéricas, en las variables categóricas no es posible obtener muchos estadísticos. El más común es la moda, que se corresponde con la columna *topCount* de la tabla 2.
 
 Otra información que se puede analizar en el análisis univariante de una variable categórica es la frecuencia de aparición de cada una de las categorías. Esto es posible representarlo visualmente mediante un gráfico de barras. Es por ello que se ha realizado dicho gráfico para explicar los datos de la variable *SITLAB*
 
@@ -529,6 +546,13 @@ ggplot(frecuencias, aes(x = reorder(Situacion, -n), y = n, fill = n)) +
   scale_fill_gradient(low = "lightblue", high = "darkblue")
 ```
 Tal y como se aprecia en el gráfico, en el momento en que se realizó la encuesta, predominaban claramente las personas ocupadas a tiempo completo. Seguidas de las jubiladas.
+
+### Análisis de Outliers
+
+
+
+
+
 
 ## Análisis bivariante
 
