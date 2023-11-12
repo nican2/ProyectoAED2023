@@ -77,7 +77,7 @@ Primeramente, se cargan todas las librearías necesarias en las diferentes fases
 ```{r librerias, message = F, include = T, echo = F}
 # Carga de librerías necesarias con pacman
 library(pacman)
-pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2, editrules)
+pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2, editrules, mice)
 ```
 
 A continuación, se realiza la carga del conjunto de datos, presente tanto en *.txt* como *.csv* en la carpeta *./data* incluida en el repositorio del proyecto. Asimismo, se carga el fichero .xlsx que nos muestra el diseño de registro y valores válidos de las variables. Este fichero será especialmente útil, puesto que permitirá una automatización para convertir el conjunto de datos, que actualmente se encuentra en estado Raw data, a Technically correct data, teniendo cada variable su tipo correspondiente.
@@ -562,6 +562,168 @@ ggplot(frecuencias, aes(x = reorder(Situacion, -n), y = n, fill = n)) +
 ```
 Tal y como se aprecia en el gráfico, en el momento en que se realizó la encuesta, predominaban claramente las personas ocupadas a tiempo completo. Seguidas de las jubiladas.
 
+### Análisis de outliers
+
+```{r detecta_outliers_function}
+
+detectar_outliers <- function(data, methods = c("tresSigma")) {
+  n <- length(data)
+  nMiss <- sum(is.na(data) == TRUE)
+  result_list <- list()
+  
+  if ("tresSigma" %in% methods) {
+    # Método tresSigma
+    umbral3s <- mean(data) + 3 * sd(data)
+    nOut3s <- length(data[abs(data) > umbral3s])
+    lowLim3s <- mean(data) - 3 * sd(data)
+    upLim3s <- mean(data) + 3 * sd(data)
+    minNom <- min(data[which(data >= lowLim3s)])
+    maxNom <- max(data[which(data <= upLim3s)])
+
+    outliers <- data.frame(method = 'tresSigma', n = n, nMiss = nMiss, nOut = nOut3s, lowLim = lowLim3s, upLim = upLim3s, minNom = minNom, maxNom = maxNom)
+    result_list[["tresSigma"]] <- outliers
+  }
+
+  if ("Hampel" %in% methods) {
+    # Método Hampel
+    MADM <- 1.4826 * median(abs(data - median(data))) 
+    umbral3s <- median(data) + 3 * MADM
+    nOut3s <- length(data[abs(data) > umbral3s])
+    lowLim3s <- median(data) - 3 * MADM
+    upLim3s <- median(data) + 3 * MADM
+    minNom <- min(data[which(data >= lowLim3s)])
+    maxNom <- max(data[which(data <= upLim3s)])
+
+    outliers <- data.frame(method = 'Hampel', n = n, nMiss = nMiss, nOut = nOut3s, lowLim = lowLim3s, upLim = upLim3s, minNom = minNom, maxNom = maxNom)
+    result_list[["Hampel"]] <- outliers
+  }
+
+  if ("ReglaBoxplot" %in% methods) {
+    # Método ReglaBoxplot
+    Q3Q1 <- IQR(data)
+    Q3 <- quantile(data, probs = 0.75) %>% as.numeric()
+    Q1 <- quantile(data, probs = 0.25) %>% as.numeric()
+    umbralSup <- Q3 + 1.5 * Q3Q1
+    umbralInf <- Q1 - 1.5 * Q3Q1
+
+    nOut3s <- length(data[data > umbralSup | data < umbralInf])
+    lowLim3s <- umbralInf
+    upLim3s <- umbralSup
+    minNom <- min(data[which(data >= lowLim3s)])
+    maxNom <- max(data[which(data <= upLim3s)])
+
+    outliers <- data.frame(method = 'ReglaBoxplot', n = n, nMiss = nMiss, nOut = nOut3s, lowLim = lowLim3s, upLim = upLim3s, minNom = minNom, maxNom = maxNom)
+    result_list[["ReglaBoxplot"]] <- outliers
+  }
+
+  if ("p5-p95" %in% methods) {
+    # Método p5-p95
+    lowLim <- quantile(data, 0.05)
+    upLim <- quantile(data, 0.95)
+    minNom <- min(data[which(data > lowLim)])
+    maxNom <- max(data[which(data < upLim)])
+    nOut <- length(which(data < lowLim | data > upLim))
+
+    outliers <- data.frame(method = 'p5-p95', n = n, nMiss = nMiss, nOut = nOut, lowLim = lowLim, upLim = upLim, minNom = minNom, maxNom = maxNom)
+    result_list[["p5-p95"]] <- outliers
+  }
+
+  return(result_list)
+}
+```
+
+```{r det_outliers_test}
+methods_to_apply <- c("tresSigma", "Hampel", "ReglaBoxplot", "p5-p95")
+results <- detectar_outliers(na.omit(df$SATISTIEMP), methods = methods_to_apply)
+results <- bind_rows(results)
+```
+
+
+```{r funciones_detectar_separadas}
+# Puedo poner na.rm = TRUE por lo analizado anteriormente, ya que carece de sentido imputar valores
+
+detect_outliers_3sigma <- function(x) {
+  umbral3s <- 3 * sd(x, na.rm = TRUE)
+  return(ifelse(abs(x - mean(x, na.rm = TRUE)) > umbral3s, TRUE, FALSE))
+}
+
+# Función para detectar outliers usando el método de Hampel
+detect_outliers_hampel <- function(x) {
+  MADM <- mad(x, na.rm = TRUE)
+  umbralHampel <- 3 * MADM
+  return(ifelse(abs(x - median(x, na.rm = TRUE)) > umbralHampel, TRUE, FALSE))
+}
+
+# Función para detectar outliers usando el método de boxplot
+detect_outliers_boxplot <- function(x) {
+  Q3Q1 <- IQR(x, na.rm = TRUE)
+  Q3 <- quantile(x, probs = 0.75, na.rm = TRUE)
+  Q1 <- quantile(x, probs = 0.25, na.rm = TRUE)
+  umbralSup <- Q3 + 1.5 * Q3Q1
+  umbralInf <- Q1 - 1.5 * Q3Q1
+  return(ifelse(x < umbralInf | x > umbralSup, TRUE, FALSE))
+}
+
+# Función para detectar outliers usando percentiles
+detect_outliers_percentiles <- function(x) {
+  lowLim <- quantile(x, 0.05, na.rm = TRUE)
+  upLim <- quantile(x, 0.95, na.rm = TRUE)
+  return(ifelse(x < lowLim | x > upLim, TRUE, FALSE))
+}
+```
+
+```{r clasificacion_outliers_vars_num}
+# Aplicar las funciones para detectar outliers a todas las variables numéricas
+df_sum_outliers <- df %>%
+  mutate(across(where(is.numeric), list(
+    Outliers_3sigma = ~detect_outliers_3sigma(.),
+    Outliers_Hampel = ~detect_outliers_hampel(.),
+    Outliers_Boxplot = ~detect_outliers_boxplot(.),
+    Outliers_Percentiles = ~detect_outliers_percentiles(.)
+  )))
+head(df_sum_outliers, 10)
+```
+
+```{r seleccion_una_variable}
+x <- "NHIJOS"
+
+df_var <- df_sum_outliers %>%
+  select(all_of(x), starts_with(paste0(x, "_Outliers"))) %>%
+  rename_at(vars(starts_with(paste0(x, "_Outliers"))), ~str_remove(., paste0(x, "_Outliers_"))) %>%
+  pivot_longer(cols = -all_of(x), names_to = "Method", values_to = "Outlier_Status")
+
+ggplot(df_var, aes(x = Method, y = NHIJOS, color = Outlier_Status)) +
+  geom_point() +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "blue")) +
+  labs(
+    title = "Distribución de NHIJOS con Detección de Outliers",
+    x = "Método de Detección de Outliers",
+    y = "NHIJOS",
+    color = "Outlier"
+  )
+```
+
+```{r outliers_complete, eval = FALSE}
+# Lo dejo en eval = FALSE porque ocupa una cantidad de RAM desproporcionada tener esto:
+
+df_sum_outliers_long <- df_sum_outliers %>%
+  pivot_longer(cols = contains("Outliers"), 
+               names_to = "Method", 
+               values_to = "Outlier_Status") %>%
+  mutate(Outlier_Status = as.logical(Outlier_Status))  # Convierte TRUE/FALSE a lógico
+
+print(df_sum_outliers_long)
+```
+
+
+```{r}
+outlier_values <- unique(boxplot.stats(df$NHIJOS)$out)  # outlier values.
+boxplot(df$NHIJOS, main="Distancia", boxwex = 0.1)
+mtext(paste("Outliers: ", paste(outlier_values, collapse=", ")), cex = 0.6)
+
+```
+
+
 ## Análisis bivariante
 
 Como su nombre indica, la fase de análisis bivariante, consiste en la búsqueda de relación entre dos variables. Para ello existen diferentes formas de representación, en función del tipo de variables que se esté tratando tratando.
@@ -777,13 +939,11 @@ Podemos observar que hay múltiples outliers, como consecuencia de que la inmens
 
 
 ## Busqueda de outliers multivariante
+
 Se implementan algoritmos de clustering(kmeans) para detectar instancias atipicas dentro del conjunto de datos
 
-
-
-
-
 Para variables numericas los outliers se obtienen de la siguiente forma:
+
 ```{r eval = FALSE}
 # Se crea una copia del df donde se seleccionan las columnas deseadas
 df_cl <- df[,c("EDAD","SATISTIEMP","ANOESTUD")]
@@ -816,8 +976,8 @@ df_cl<- df_cl %>%
 ggplot(df_cl,aes(x=EDAD, y=SATISTIEMP, alpha=0.5,color=clust)) +
   geom_jitter() +
   labs(title = "Gráfico de Clustering",
-       x="Variable X",
-       y="Variable Y",
+       x="EDAD",
+       y="SATISTIEMP",
        color="Cluster")
 
 #Se filtran a partir de una distancia que debe ser definida, que permita obtener un numero
@@ -830,7 +990,7 @@ df_cl<- df_cl %>%
 ggplot(df_cl, aes(x=EDAD,y=SATISTIEMP,alpha=ANOESTUD,color=clust)) +
   geom_jitter() +
   labs(title = "Valores atipicos detectados",x = "Edad",
-       y="Satisfaccion compras online",
+       y="Satisfacción desplazamiento",
        alpha="Año estudio",color="Cluster")+
   theme_classic()
 
@@ -864,7 +1024,7 @@ distancias <- sapply(1:nrow(df_copia),function(x){
 })
 
 # Se añaden las distancias al df inicial
-df_copia<- df_copia %>%
+df_copia<- df_copia %>% 
   mutate(dist=(distancias),clust=as.factor(clusters$cluster))
 
 #Es necesario encontrar una combinacion de numero de clusters y de d que permita obtener una cantidad de instancias reducidas que puedan considerarse
@@ -872,12 +1032,12 @@ df_copia<- df_copia %>%
 # Se busca una distancia d que al hacer sum(distancias>d) sea un valor bajo, que indica el numero de outliers 
 
 #Se filtra y se obtienen solo los outliers
-#df_extremo<- df_copia %>%
-  #filter(dist>_d_)
+df_extremo<- df_copia %>%
+  filter(dist>_d_)
 
 
 #Se visualizan solo los outliers, se podia usar otra funcion en lugar de head
-#head(df_extremo)
+head(df_extremo)
 
 
 ```
