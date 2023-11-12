@@ -651,18 +651,12 @@ Como se puede apreciar en el gráfico de barras anterior, hay campos de estudio 
   
 ```{r mosaico, echo = FALSE, include = TRUE, fig.width = 7, fig.height = 5, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
 library(ggmosaic)
-ggplot(data = df) +
-  geom_mosaic(aes(x = product(SITLAB, TDOMEST), fill = HIJOS))
-#+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+df_aux <- df[, c("SITLAB", "TDOMEST", "HIJOS")]
+levels(df_aux$TDOMEST) <- c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")
+ggplot(data = df_aux) +
+  geom_mosaic(aes(x = product(SITLAB, TDOMEST), fill = HIJOS)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-```{r mosaico, echo = FALSE, include = TRUE, fig.width = 7, fig.height = 5, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
-library(ggmosaic)
-ggplot(data = df) +
-  geom_mosaic(aes(x = product(TAM_MUNI, SITLAB), fill = HIJOS))
-  + theme(axis.text.x = element_text(angle = -45, hjust=1))
-```
-```
-
 
 ### Caracterización
 
