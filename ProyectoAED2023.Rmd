@@ -523,6 +523,7 @@ p_edad_histogram_density <- ggplot(df, aes(x = EDAD)) +
 
 p_edad_histogram_density
 ```
+
 Mediante el gráfico anterior, se aprecia que las edades más fracuentes en el dataset van de 40 a 60 años. Apreciamos además que en cierta parte la concordancia con una gaussiana es clara, yéndose esta hacia las colas.
 
 ```{r qqplot, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Q-Q plot para la variable EDAD."}
@@ -860,6 +861,7 @@ ggplot(df_cl, aes(x=EDAD,y=SATISTIEMP,alpha=ANOESTUD,color=clust)) +
 
 
 Para categoricas el estudio es el sigueinte:
+
 ```{r}
 # Se genera un df donde realizar los cambios
 df_copia <- na.omit(df[,c("HIJOS","COMPRAINT","TAM_MUNI","EC")])
