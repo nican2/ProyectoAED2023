@@ -585,7 +585,7 @@ ggplot(SITLAB_freq, aes(x = reorder(SITLAB, -n), y = n, fill = n)) +
 
 Tal y como se aprecia en el gráfico, en el momento en que se realizó la encuesta, predominaban claramente las personas ocupadas a tiempo completo, seguidas de las jubiladas o prejubiladas. Por otra parte, las personas paradas que no hubieran nunca trabajado representaban el grupo más pequeño.
 
-## Análisis de outliers univariante
+### Análisis de outliers univariante
 
 Para la detección de outliers, observaciones que parecen "diverger" del patrón de comportamiento del resto de datos, resulta fundamental establecer un criterio para su identificación. En nuestro caso, hemos utilizado 4 métodos diferentes:
 
@@ -774,39 +774,60 @@ df_sum_outliers_long <- df_sum_outliers %>%
 print(df_sum_outliers_long)
 ```
 
-Analizando nuestro conjunto de datos, hemos llegado a la conclusión de que los Outliers que aparecen no se deben en ningún caso a datos erróneos. Esto es así porque el INE ha debido de hacer un preprocesado de posibles valores incorrectos con anterioridad. Así pues, consideramos que carece de sentido imputarlos e incluso eliminarlos, ya que pueden resultar de interés 
+Analizando nuestro conjunto de datos, hemos llegado a la conclusión de que los Outliers que aparecen no se deben en ningún caso a datos erróneos. Esto es así porque el INE ha debido de hacer un preprocesado de posibles valores incorrectos con anterioridad. Así pues, consideramos que carece de sentido imputarlos e incluso eliminarlos, ya que pueden resultar de interés en nuestro estudio.
 
 ## Análisis multivariante
 
-Como su nombre indica, la fase de análisis multivariante, consiste en la búsqueda de relación entre dos variables. Para ello existen diferentes formas de representación, en función del tipo de variables que se esté tratando tratando.
+Como su nombre indica, la fase de análisis multivariante, consiste en la búsqueda de relación entre dos variables o más. Para ello existen diferentes formas de representación, en función del tipo de variables que se esté tratando tratando.
 
 ### Gráficos
 
-#### Analisis entre variables numericas
+#### Análisis entre variables numéricas
 
 Mediante la realización del siguiente gráfico se ha tratado de representar la relación existente entre las variables: edad (EDAD), número de hijos (NHIJOS) y grado de satisfacción con el tiempo de desplazamiento al trabajo (SATISTIEMP).
 
-```{r graf_dispersion, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Diagrama de dispersión para representar la relación entre EDAD, NHIJOS y SATISTIEMP", fig.pos = "H"}
+```{r grupos_edad}
+rangos_edades <- c(16, 26, 36, 46, 56, 66, 76, 86, 96, 106, 116)
+puntos_medios <- c(21, 31, 41, 51, 61, 71, 81, 91, 101, 111, 121)
+
+df_test <- df %>%
+  mutate(grupo_edades = cut(EDAD, breaks = rangos_edades, labels = c("16-26", "27-36", "37-46", "47-56", "57-66", "67-76", "77-86", "87-96", "97-106", "107-116"), na.rm = TRUE)) %>%
+  group_by(grupo_edades) %>%
+  summarise(MediaHijos = mean(NHIJOS, na.rm = TRUE)) %>%
+  mutate(punto_medio = puntos_medios)
+
+df_test <- na.omit(df_test)
+head(df_test, 10)
+```
+
+
+```{r graf_dispersion, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Diagrama de dispersión para representar la relación entre EDAD, NHIJOS y SATISTIEMP \\label{fig:graf_dispersion}", fig.pos = "H"}
 # Para una visualización sin na que no permiten visualizar los datos antes del tratamiento de
 # valores faltantes, se incluye lo siguiente
 
 df_sin_na <- df[complete.cases(df$EDAD, df$NHIJOS, df$SATISTIEMP), ]
 
 
-
-ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SATISTIEMP)) +
+graf_dispersion <- ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SATISTIEMP)) +
   geom_jitter(data = subset(df, is.na(SATISTIEMP)),
               aes(x = EDAD, y = NHIJOS),
               color = "lightgreen",  # Color para los valores faltantes
               size = 2, alpha = 0.05) +
   geom_jitter(size = 2, alpha = 0.5) +
   scale_color_gradient(low = "darkorchid4", high = "yellow") +
-  labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad", y = "Nº hijos")
+  labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad / años", y = "Nº hijos") +
+  geom_line(data = df_test, aes(x = punto_medio, y = MediaHijos), color = "red", size = 1, show.legend = TRUE)
+
+ggsave("./figure/graf_dispersion_HD.png", plot = graf_dispersion, width = 6, height = 3, dpi = 300)
+
+ggsave("./figure/graf_dispersion.png", plot = graf_dispersion, width = 5, height = 3, dpi = 80) # para que quepa en los márgenes...
+knitr::include_graphics("./figure/graf_dispersion.png")
 
 ```
-El tipo de gráfico empleado se conoce como gráfico de dispersión. Como se puede observar en él, a medida que va aumentando la edad de las personas hasta los 40 años, también va aumentando en número de hijos. 
 
-#### Analisis entre variables numericas y categóricas
+Este gráfico corresponde a uno de dispersión con puntos "jittered" o dispersos, lo que resulta útil dada la enorme superposición de puntos presentes. La línea roja se ha hecho a partir de las medias en el número de hijos para los intervalos "16-26", "27-36", "37-46", "47-56", "57-66", "67-76", "77-86", "87-96", "97-106", "107-116", cogiendo el punto medio en cada caso. Es evidente notar que hay una tendencia creciente en que el número de hijos sea mayor conforme la edad es mayor. Esto es lo que uno esperaría, ya que antiguamente en España se solían tener mayor cantidad de hijos. Vemos además que los **NA** para la variable SATISTIEMP (satisfacción por desplazamiento a estudio/trabajo) [color verde] está muy concentrada en edades avanzadas, resultado de que la mayoría de gente está jubilada.
+
+#### Analisis entre variables numéricas y categóricas
 
 En primer lugar, se ha realizado una representación de la edad de las personas en función de su sexo. Para esta representación, se ha generado un gráfico con dos histogramas. El de color azul para representar la edad de los hombres y el rojo para representar la edad de las mujeres.
 
