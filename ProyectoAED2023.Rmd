@@ -647,7 +647,6 @@ ggplot(df_plot, aes(x = CAMPO, fill = SEXO)) +
 ```
 Como se puede apreciar en el gráfico de barras anterior, hay campos de estudio en los que predominan los hombres frente a las mujeres, como es en el caso de las Arquitecturas. En otros campos pasa lo contrario, predominan las mujeres, como en el caso de la salud o la educación. 
 
-  <!-- Aquí iría un mosaico de esos en los que se relacionan 3 o más variables -->
   
 ```{r mosaico, echo = FALSE, include = TRUE, fig.width = 7, fig.height = 5, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
 library(ggmosaic)
