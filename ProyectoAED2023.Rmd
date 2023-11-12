@@ -619,7 +619,7 @@ Obtervando el gráfico obtenido, se puede ver como en el dataset y más mujeres 
   
 Por último, se ha tratado de crear un gráfico para relacionar las variables: edad (EDAD), grado de participación en las tareas domésticas (TDOMEST) y estado civil (EC). Para ello, se ha empleado un gráfico de dispersión en el que el eje de abscisas representa la variable TDOMEST, el eje de ordenadas representa la variable EDAD y el color de cada uno de los puntos representa la variable EC.
   
-```{r edad_by_tdomest_by_ec, echo = FALSE, include = FALSE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
+```{r edad_by_tdomest_by_ec, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
 ggplot(df, aes(x = TDOMEST, y = EDAD, colour = EC)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
@@ -648,6 +648,21 @@ ggplot(df_plot, aes(x = CAMPO, fill = SEXO)) +
 Como se puede apreciar en el gráfico de barras anterior, hay campos de estudio en los que predominan los hombres frente a las mujeres, como es en el caso de las Arquitecturas. En otros campos pasa lo contrario, predominan las mujeres, como en el caso de la salud o la educación. 
 
   <!-- Aquí iría un mosaico de esos en los que se relacionan 3 o más variables -->
+  
+```{r mosaico, echo = FALSE, include = TRUE, fig.width = 7, fig.height = 5, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
+library(ggmosaic)
+ggplot(data = df) +
+  geom_mosaic(aes(x = product(SITLAB, TDOMEST), fill = HIJOS))
+#+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r mosaico, echo = FALSE, include = TRUE, fig.width = 7, fig.height = 5, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
+library(ggmosaic)
+ggplot(data = df) +
+  geom_mosaic(aes(x = product(TAM_MUNI, SITLAB), fill = HIJOS))
+  + theme(axis.text.x = element_text(angle = -45, hjust=1))
+```
+```
+
 
 ### Caracterización
 
