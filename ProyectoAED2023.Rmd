@@ -338,7 +338,7 @@ Esta cuestión puede hacerse frente utilizando la información adicional que INE
 
 **Nota**: es importante recalcar que en el propio cuestionario se pedía que a las personas encuestadas que estuvieran *teletrabajando* debido al COVID-19 respondieran teniendo en cuenta su situación anterior. 
 
-Esta serie de conclusiones de pertenencia de NA o no se comprueban en R.
+Esta serie de conclusiones de pertenencia de NA no se comprueban en R.
 
 ```{r verify_missing}
 verif_EC <- sum(df$EC == "Soltero/a" & !is.na(df$EDADEC)) == 0 & sum((is.na(df$EDADEC) & df$EC != "Soltero/a")) == 0
@@ -550,27 +550,31 @@ frecuencias <- data.frame(Situacion = df$SITLAB) %>% count(Situacion)
 ```
 
 
-```{r sitlab_bar, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Q-Q plot para la variable EDAD."}
+```{r sitlab_bar, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 4, fig.align = "center", fig.cap = "Diagrama de barras para la variable SITLAB", fig.pos = "H"}
 ggplot(frecuencias, aes(x = reorder(Situacion, -n), y = n, fill = n)) +
   geom_bar(stat = "identity",
            col = "black") +
-  labs(title = "Diagrama de Barras para representar la Situación Laboral (SITLAB)",
+  labs(title = "Diagrama de Barras de la Situación Laboral",
        x = "Categoría",
        y = "Frecuencia") +
   theme(axis.text.x = element_text(angle = 70, hjust = 1)) +
-  scale_fill_gradient(low = "lightblue", high = "darkblue")
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  scale_x_discrete(labels = c("Jornada completa", "Pre/Jubilado/a", "Parado/a (Extrabajador/a)", "Estudiante", "Tareas del hogar", "Jornada parcial", "Incapacitado/a", "Otra inactividad", "Parado/a (No ha trabajado)"))
 ```
+
 Tal y como se aprecia en el gráfico, en el momento en que se realizó la encuesta, predominaban claramente las personas ocupadas a tiempo completo. Seguidas de las jubiladas.
 
-## Análisis bivariante
+## Análisis multivariante
 
-Como su nombre indica, la fase de análisis bivariante, consiste en la búsqueda de relación entre dos variables. Para ello existen diferentes formas de representación, en función del tipo de variables que se esté tratando tratando.
+Como su nombre indica, la fase de análisis multivariante, consiste en la búsqueda de relación entre dos variables. Para ello existen diferentes formas de representación, en función del tipo de variables que se esté tratando tratando.
 
 ### Gráficos
 
-#### Analisis entre dos variables numericas
-Un ejemplo de este tipo de analisis es el siguiente
-```{r}
+#### Analisis entre variables numericas
+
+Mediante la realización del siguiente gráfico se ha tratado de representar la relación existente entre las variables: edad (EDAD), número de hijos (NHIJOS) y grado de satisfacción con el tiempo de desplazamiento al trabajo (SATISTIEMP).
+
+```{r graf_dispersion, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Diagrama de dispersión para representar la relación entre EDAD, NHIJOS y SATISTIEMP", fig.pos = "H"}
 # Para una visualización sin na que no permiten visualizar los datos antes del tratamiento de
 # valores faltantes, se incluye lo siguiente
 
@@ -588,12 +592,13 @@ ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SATISTIEMP)) +
   labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad", y = "Nº hijos")
 
 ```
+El tipo de gráfico empleado se conoce como gráfico de dispersión. Como se puede observar en él, a medida que va aumentando la edad de las personas hasta los 40 años, también va aumentando en número de hijos. 
 
+#### Analisis entre variables numericas y categóricas
 
+En primer lugar, se ha realizado una representación de la edad de las personas en función de su sexo. Para esta representación, se ha generado un gráfico con dos histogramas. El de color azul para representar la edad de los hombres y el rojo para representar la edad de las mujeres.
 
-<!-- Númerica - Categórica -->
-
-```{r edad_by_sexo, echo=FALSE, include = TRUE}
+```{r edad_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Histograma de la variable EDAD en función de la variable SEXO", fig.pos = "H"}
 p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
   geom_freqpoly(binwidth = 1) +
   labs(
@@ -607,12 +612,25 @@ p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
 
 p_edad
 ```
-  <!-- En numérica categórica también iría el mapa -->
 
-#### Analisis de una variable numérica frente a una categórica
-```{r}
+Obtervando el gráfico obtenido, se puede ver como en el dataset y más mujeres que hombres a las que se ha realizado la encuesta para casi todas las edades excepto para las personas cuya edad va desde los 16 a los 30 años.
+
+  <!-- En numérica categórica también iría el mapa -->
+  
+Por último, se ha tratado de crear un gráfico para relacionar las variables: edad (EDAD), grado de participación en las tareas domésticas (TDOMEST) y estado civil (EC). Para ello, se ha empleado un gráfico de dispersión en el que el eje de abscisas representa la variable TDOMEST, el eje de ordenadas representa la variable EDAD y el color de cada uno de los puntos representa la variable EC.
+  
+```{r edad_by_tdomest_by_ec, echo = FALSE, include = FALSE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
+ggplot(df, aes(x = TDOMEST, y = EDAD, colour = EC)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+Analizando el gráfico obtenido, se observa como los jovenes solteros y los viudos son los que menos tareas realizan. También se aprecia como las personas divorciadas destacan entre los que realizan todas las tareas del hogar.
+
+#### Analisis entre variables categóricas.
+
+Por último, también es posible representar la relación entre varias variables categóricas. Para ello, lo más común es emplear el gráficos de barras o mosaicos. En la siguiente representación se ha expresado la relación entre la el campo de los estudios (CAMPO) con el sexo de las personas (SEXO).
+```{r campo_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
 df_plot <- df
-levels(df_plot$CAMPO)
+#levels(df_plot$CAMPO)
 
 etiquetas <- c( "Educ.","Artes","CC.SS","Negocios","Ciencias","Tec.",
                 "Arquit.","Agricult.","Salud","Otros","NA")
@@ -620,28 +638,22 @@ etiquetas <- c( "Educ.","Artes","CC.SS","Negocios","Ciencias","Tec.",
 
 ggplot(df_plot, aes(x = CAMPO, fill = SEXO)) +
   geom_bar(position = "dodge", stat = "count") +
-  labs(title = "Gráfico de Barras que relaciona Sexo y Campo de estudio", x = "Campo", y = "Frecuencia") +
+  labs(title = "Gráfico del campo de estudio por sexo", x = "Campo", y = "Frecuencia") +
   scale_fill_manual(values = c("Hombre" = "blue", "Mujer" = "pink"), na.value = "grey") +
   guides(fill = guide_legend(title = "Sexo"))+
-  scale_x_discrete(labels = etiquetas)
-
-```
-
-
-  <!-- Aquí podríamos poner una gráfica de barras en las que cada barra la pinta de un color en función de otra varible categórica -->
-
-## Análisis multivariante (todo lo que sea más de tres variables)
-
-```{r echo=FALSE, include=TRUE}
-ggplot(df, aes(x = TDOMEST, y = EDAD, colour = EC)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")) + 
+  scale_x_discrete(labels = etiquetas) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 ```
+Como se puede apreciar en el gráfico de barras anterior, hay campos de estudio en los que predominan los hombres frente a las mujeres, como es en el caso de las Arquitecturas. En otros campos pasa lo contrario, predominan las mujeres, como en el caso de la salud o la educación. 
 
   <!-- Aquí iría un mosaico de esos en los que se relacionan 3 o más variables -->
 
 ### Caracterización
 
-<!-- Mapa de correlaciones -->
+Otra forma de analizar la relación existente entre variables es mediante el cálculo de estadísticos. Como es el caso de las correlaciones o covarianzas para las variables numéricas. O la realización de contrastes de hipótesis para las variables categóricas.
+
+Para el caso de las variables numéricas, una técnica común es la creación de un mapa de correlaciónes con todas las variables del dataset. En nuestro caso, se corresponde con el siguiente.
 
 ```{r}
 # Seleccionamos las variables numéricas del dataframe
@@ -666,7 +678,7 @@ upper_tri <- get_upper_tri(corr_mat)
 melted_upper_tri <- melt(upper_tri, na.rm = TRUE)
 ```
 
-```{r echo=FALSE, include=TRUE}
+```{r corr_plot, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Mapa de correlaciones para las variable numéricas", fig.pos = "H"}
 ggplot(data = melted_upper_tri, aes(Var2, Var1, fill = value))+
  geom_tile(color = "white")+
  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
@@ -676,7 +688,7 @@ ggplot(data = melted_upper_tri, aes(Var2, Var1, fill = value))+
  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
     size = 12, hjust = 1))+
  coord_fixed() + 
-  geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
+  geom_text(aes(Var2, Var1, label = value), color = "black", size = 3) +
 theme(
   axis.title.x = element_blank(),
   axis.title.y = element_blank(),
@@ -684,13 +696,15 @@ theme(
   panel.border = element_blank(),
   panel.background = element_blank(),
   axis.ticks = element_blank(),
-  legend.justification = c(1, 0),
-  legend.position = c(0.6, 0.7),
-  legend.direction = "horizontal")+
-  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+  legend.justification = "right",
+  legend.position = "right",
+  legend.direction = "vertical")+
+  guides(fill = guide_colorbar(barwidth = 1, barheight = 7,
                 title.position = "top", title.hjust = 0.5))
 
 ```
+Analizando los resultados obtenidos, sólo se puede apreciar una dependencia entre los de variables EDAD y ANOESTUD, y, ANOESTUD y EDADESTUD. Entre el resto de variables numéricas no existe una dependencia.
+
 <!-- Tabla crosstable -->
 
 ### Resto de cosas hechas
