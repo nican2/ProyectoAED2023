@@ -783,20 +783,8 @@ p_boxplot_nacim <- ggplot(df, aes(x = NACIM, y = NHIJOS, fill = NACIM)) +
 
 p_boxplot_nacim
 ```
+
 Podemos observar que hay múltiples outliers, como consecuencia de que la inmensa mayoría de la gente suele estar dentro del rango intercuartílico para el número de hijos, siendo muy raro tener 6 hijos o más. Un tratamiento más riguroso para detectar las anomalías se realizará posteriormente.
-
-
-```{r anadir_luego}
-df %>%
-  filter(is.na(NHIJOS) & HIJOS == "Sí")
-
-df %>%
-  filter(!is.na(NHIJOS) & HIJOS == "No")
-```
-
-Nota: meter mapa por provincias.
-
-
 
 
 ## Busqueda de outliers multivariante
@@ -807,7 +795,7 @@ Se implementan algoritmos de clustering(kmeans) para detectar instancias atipica
 
 
 Para variables numericas los outliers se obtienen de la siguiente forma:
-```{r}
+```{r eval = FALSE}
 # Se crea una copia del df donde se seleccionan las columnas deseadas
 df_cl <- df[,c("EDAD","SATISTIEMP","ANOESTUD")]
 
@@ -862,7 +850,7 @@ ggplot(df_cl, aes(x=EDAD,y=SATISTIEMP,alpha=ANOESTUD,color=clust)) +
 
 Para categoricas el estudio es el sigueinte:
 
-```{r}
+```{r eval = FALSE}
 # Se genera un df donde realizar los cambios
 df_copia <- na.omit(df[,c("HIJOS","COMPRAINT","TAM_MUNI","EC")])
 
