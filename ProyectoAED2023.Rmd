@@ -69,7 +69,7 @@ El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nac
 # Configuración general de chunks
 library(knitr)
 options(width = 100)
-knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 100, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F, fig.width = 5.0, fig.height = 4, fig.align = "left")
+knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 80, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F, fig.width = 5.0, fig.height = 4, fig.align = "left")
 ```
 
 Primeramente, se cargan todas las librearías necesarias en las diferentes fases del proyecto.
@@ -490,7 +490,7 @@ kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRU
 
 Para completar el análisis univariante de las variables numéricas, se ha generado el siguiente gráfico. Que se corresponde con el histograma de la variable *EDAD* y con la correspondiente densidad de los datos.
 
-```{r edad_histogram, echo = FALSE, include = TRUE, fig.width = 6, fig.height = 3, fig.align = "center", fig.cap = "Distribución de edades para la encuesta con la curva gaussiana"}
+```{r edad_histogram, echo = FALSE, include = TRUE, fig.width = 6, fig.height = 3, fig.align = "center", fig.cap = "Distribución de edades para la encuesta con la curva gaussiana", fig.pos = "h"}
 # Calcular la media y la desviación estándar de la variable "EDAD"
 
 media_edad <- mean(df$EDAD)
@@ -526,7 +526,7 @@ p_edad_histogram_density
 
 Mediante el gráfico anterior, se aprecia que las edades más fracuentes en el dataset van de 40 a 60 años. Apreciamos además que en cierta parte la concordancia con una gaussiana es clara, yéndose esta hacia las colas.
 
-```{r qqplot, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Q-Q plot para la variable EDAD."}
+```{r qqplot, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Q-Q plot para la variable EDAD.", fig.pos = "h"}
 
 qqplot_edad <- ggplot(df, aes(sample = EDAD)) +
   geom_qq() +
@@ -550,7 +550,7 @@ frecuencias <- data.frame(Situacion = df$SITLAB) %>% count(Situacion)
 ```
 
 
-```{r echo=FALSE, include=TRUE}
+```{r sitlab_bar, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Q-Q plot para la variable EDAD."}
 ggplot(frecuencias, aes(x = reorder(Situacion, -n), y = n, fill = n)) +
   geom_bar(stat = "identity",
            col = "black") +
@@ -695,18 +695,7 @@ theme(
 
 ### Resto de cosas hechas
 
-```{r}
-# Crea un QQ plot para la variable "EDAD"
 
-qqplot_edad <- ggplot(df, aes(sample = EDAD, color = SEXO)) +
-  stat_qq() +
-  stat_qq_line() +
-  ggtitle("QQ Plot para la variable EDAD") +
-  xlab("Cuantiles teóricos") +
-  ylab("Cuantiles observados")
-
-qqplot_edad
-```
 
 https://ggplot2.tidyverse.org/reference/geom_qq.html
 
