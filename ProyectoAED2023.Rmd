@@ -636,7 +636,7 @@ etiquetas <- c( "Educ.","Artes","CC.SS","Negocios","Ciencias","Tec.",
                 "Arquit.","Agricult.","Salud","Otros","NA")
 
 
-ggplot(df_plot, aes(x = CAMPO, fill = SEXO)) +
+ggplot(na.omit(df_plot), aes(x = CAMPO, fill = SEXO)) +
   geom_bar(position = "dodge", stat = "count") +
   labs(title = "Gráfico del campo de estudio por sexo", x = "Campo", y = "Frecuencia") +
   scale_fill_manual(values = c("Hombre" = "blue", "Mujer" = "pink"), na.value = "grey") +
