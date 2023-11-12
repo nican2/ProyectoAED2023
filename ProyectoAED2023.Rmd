@@ -69,7 +69,7 @@ El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nac
 # Configuración general de chunks
 library(knitr)
 options(width = 100)
-knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 80, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F, fig.width = 5.0, fig.height = 4, fig.align = "left")
+knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F, fig.width = 5.0, fig.height = 4, fig.align = "left")
 ```
 
 Primeramente, se cargan todas las librearías necesarias en las diferentes fases del proyecto.
@@ -244,12 +244,13 @@ Tras un análisis de las variables en *dr_ECEPOVadultos_2021.xlsx* y
 
 ```{r variables_usadas, include = T}
 data_info <- data.frame(
-  Variable = c(
+  Variable = c("IDEN",
     "IDQ_PV", "TAM_MUNI", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD",
     "EDADESTUD", "CAMPO", "SITLAB", "FLEXI", "LUGTRAB", "SATISTIEMP", "COMPRAINT", "HIJOS",
     "NHIJOS", "TDOMEST", "SEXO", "EDAD", "NACIM", "PNACIM"
   ),
   Descripción = c(
+    "Identificador de la vivienda",
     "Código de la provincia de residencia.",
     "Tamaño del municipio.",
     "Estado civil legal.",
@@ -281,7 +282,7 @@ knitr::kable(data_info, format = "latex",
 ```
 
 ```{r seleccion_variables}
-var_interes <- c("IDQ_PV", "TAM_MUNI", "SEXO", "EDAD", "NACIM", "PNACIM", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "FLEXI", "LUGTRAB", "SATISTIEMP", "COMPRAINT", "NHIJOS", "HIJOS", "TDOMEST")
+var_interes <- c("IDEN", "IDQ_PV", "TAM_MUNI", "SEXO", "EDAD", "NACIM", "PNACIM", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "FLEXI", "LUGTRAB", "SATISTIEMP", "COMPRAINT", "NHIJOS", "HIJOS", "TDOMEST")
   
 df <- df_merged %>%
   dplyr::select(var_interes)
@@ -536,33 +537,62 @@ qqplot_edad <- ggplot(df, aes(sample = EDAD)) +
   ylab("Edad / años") + 
   theme_minimal()
 
-qqplot_edad
+ggsave("./figure/qqplot_edad_HD.png", plot = qqplot_edad, width = 4, height = 3, dpi = 300)
+
+ggsave("./figure/qqplot_edad.png", plot = qqplot_edad, width = 3.5, height = 2, dpi = 80) # para que quepa en los márgenes...
+knitr::include_graphics("./figure/qqplot_edad.png")
 ```
 
 ### Variables de tipo categórico
 
 A diferencia de las variables numérica, en las variables categóricas no es posible obtener muchos estadísticos. El más común es la moda, que se corresponde con la columna *topCount* de la tabla 2.
 
-Otra información que se puede analizar en el análisis univariante de una variable categórica es la frecuencia de aparición de cada una de las categorías. Esto es posible representarlo visualmente mediante un gráfico de barras. Es por ello que se ha realizado dicho gráfico para explicar los datos de la variable *SITLAB*
+Otra información que se puede analizar en el análisis univariante de una variable categórica es la frecuencia de aparición de cada una de las categorías.
+Se representa esto en la Tabla \ref{tab:tabla_freq}. Es posible también representarlo visualmente mediante un gráfico de barras como en la Figura \ref{fig:sitlab_freq}. Es por ello que se ha realizado dicho gráfico para explicar los datos de la variable *SITLAB*.
 
-```{r}
-frecuencias <- data.frame(Situacion = df$SITLAB) %>% count(Situacion)
+```{r kable_SITLAB_sum}
+SITLAB_freq <- df %>%
+  select(SITLAB) %>%
+  group_by(SITLAB) %>%
+  count()
 ```
 
 
-```{r sitlab_bar, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Q-Q plot para la variable EDAD."}
-ggplot(frecuencias, aes(x = reorder(Situacion, -n), y = n, fill = n)) +
+```{r tabla_freq, fig.cap = "\\label{tab:tabla_freq}", include = TRUE}
+kable_sumnum <- knitr::kable(SITLAB_freq, format = "latex",
+             booktabs = TRUE, 
+             caption = "Frecuencias de cada grupo según su situación laboral.", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table", position = "H",
+             tabular.environment = "tabularx")
+
+kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRUE)
+```
+
+
+```{r sitlab_bar, echo = FALSE, include = TRUE, fig.align = "center", fig.cap = "Diagrama de barras para la variable SITLAB.\\label{fig:sitlab_freq}", fig.pos = "H", fig.width = 5, fig.height = 3.5}
+
+ggplot(SITLAB_freq, aes(x = reorder(SITLAB, -n), y = n, fill = n)) +
   geom_bar(stat = "identity",
            col = "black") +
-  labs(title = "Diagrama de Barras para representar la Situación Laboral (SITLAB)",
-       x = "Categoría",
-       y = "Frecuencia") +
+  ggtitle("Diagrama de barras de la Situación Laboral") +
+  xlab("Categoría") +
+  ylab("Frecuencia") +
   theme(axis.text.x = element_text(angle = 70, hjust = 1)) +
-  scale_fill_gradient(low = "lightblue", high = "darkblue")
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  scale_x_discrete(labels = c("Jornada completa", "Pre/Jubilado/a", "Parado/a (Extrabajador/a)", "Estudiante", "Tareas del hogar", "Jornada parcial", "Incapacitado/a", "Otra inactividad", "Parado/a (No ha trabajado)"))
 ```
-Tal y como se aprecia en el gráfico, en el momento en que se realizó la encuesta, predominaban claramente las personas ocupadas a tiempo completo. Seguidas de las jubiladas.
 
-### Análisis de outliers
+Tal y como se aprecia en el gráfico, en el momento en que se realizó la encuesta, predominaban claramente las personas ocupadas a tiempo completo, seguidas de las jubiladas o prejubiladas. Por otra parte, las personas paradas que no hubieran nunca trabajado representaban el grupo más pequeño.
+
+## Análisis de outliers univariante
+
+Para la detección de outliers, observaciones que parecen "diverger" del patrón de comportamiento del resto de datos, resulta fundamental establecer un criterio para su identificación. En nuestro caso, hemos utilizado 4 métodos diferentes:
+
+- Regla 3 $\sigma$: asume distribución gaussiana seguida por los datos.
+- Identificador Hampel: no presupone distribución gaussiana y utiliza la mediana.
+- Regla boxplot: a partir del boxplot se identifican como lo que queda fuera de los bigotes.
+- Regla $P_5 - P_{95}$ de percentiles: lo que queda por debajo del 5% o por encima del 95% es tratado como outlier.
 
 ```{r detecta_outliers_function}
 
@@ -573,8 +603,8 @@ detectar_outliers <- function(data, methods = c("tresSigma")) {
   
   if ("tresSigma" %in% methods) {
     # Método tresSigma
-    umbral3s <- mean(data) + 3 * sd(data)
-    nOut3s <- length(data[abs(data) > umbral3s])
+    umbral3s <- 3 * sd(data)
+    nOut3s <- length(data[abs(data - mean(data)) > umbral3s])
     lowLim3s <- mean(data) - 3 * sd(data)
     upLim3s <- mean(data) + 3 * sd(data)
     minNom <- min(data[which(data >= lowLim3s)])
@@ -586,9 +616,9 @@ detectar_outliers <- function(data, methods = c("tresSigma")) {
 
   if ("Hampel" %in% methods) {
     # Método Hampel
-    MADM <- 1.4826 * median(abs(data - median(data))) 
-    umbral3s <- median(data) + 3 * MADM
-    nOut3s <- length(data[abs(data) > umbral3s])
+    MADM <- mad(data)
+    umbral3s <- 3 * MADM
+    nOut3s <- length(data[abs(data - median(data)) > umbral3s])
     lowLim3s <- median(data) - 3 * MADM
     upLim3s <- median(data) + 3 * MADM
     minNom <- min(data[which(data >= lowLim3s)])
@@ -632,12 +662,30 @@ detectar_outliers <- function(data, methods = c("tresSigma")) {
 }
 ```
 
+Una aplicación de los 4 métodos a la variable EDAD lleva a la obtención de la Tabla \ref{tab:tabla_outliers_edad}.
+
 ```{r det_outliers_test}
 methods_to_apply <- c("tresSigma", "Hampel", "ReglaBoxplot", "p5-p95")
-results <- detectar_outliers(na.omit(df$SATISTIEMP), methods = methods_to_apply)
-results <- bind_rows(results)
+outliers_var <- detectar_outliers(na.omit(df$EDAD), methods = methods_to_apply)
+outliers_var <- bind_rows(outliers_var)
+rownames(outliers_var) <- NULL # quitar nombres feos de rownames
 ```
 
+
+```{r tabla_outliers_edad, fig.cap = "\\label{tab:tabla_outliers_edad}", include = TRUE}
+kable_sumnum <- knitr::kable(outliers_var, format = "latex",
+             booktabs = TRUE, 
+             caption = "Identificación de Outliers de la variable EDAD.", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table", position = "H",
+             tabular.environment = "tabularx")
+
+kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRUE)
+```
+
+En esta tabla apreciamos el método empleado (*Method*), el número de observaciones totales de la variable *n*, el número de datos perdidos *nMiss*, el número de outliers total detectado *nOut*, el extremo inferior y superior del cálculo (*lowLim* y *upLim*), así como el mínimo y máximo de la variable que han sido recogidos sin entrar en la identificación como outlier (*minNom* y *maxNom*).  
+
+Más allá de esto, es posible identificar visualmente los outliers en una representación gráfica, tal y como se muestra en la Figura \ref{fig:seleccion_una_variable} para la variable EDAD. Una generalización a todas las variables numéricas se ha realizado en el código de R para la identificación de los Outliers, pero no se mostrará por cuestiones de espacio.
 
 ```{r funciones_detectar_separadas}
 # Puedo poner na.rm = TRUE por lo analizado anteriormente, ya que carece de sentido imputar valores
@@ -672,6 +720,7 @@ detect_outliers_percentiles <- function(x) {
 }
 ```
 
+
 ```{r clasificacion_outliers_vars_num}
 # Aplicar las funciones para detectar outliers a todas las variables numéricas
 df_sum_outliers <- df %>%
@@ -684,24 +733,34 @@ df_sum_outliers <- df %>%
 head(df_sum_outliers, 10)
 ```
 
-```{r seleccion_una_variable}
-x <- "NHIJOS"
+**Nota importante**. La calidad de ciertas imágenes se ha debido disminuir pasando de un formato vectorial a tipo .png por la enorme cantidad de puntos que se encuentran representados (ocupa demasiada memoria RAM la visualización en .pdf y se necesita un ordenador muy potente). Si se desean visualizar con mayor calidad hay que ir al directorio *./figure* para encontrar la versión en *HD*, en la que se ha aumentado considerablemente el DPI.
+
+```{r seleccion_una_variable, echo = FALSE, include = TRUE, fig.width = 6, fig.height = 3, fig.align = "center", fig.cap = "Outliers para la variable EDAD por diferentes métodos.\\label{fig:seleccion_una_variable}", fig.pos = "H", fig.format = "png"}
+z <- "EDAD"
 
 df_var <- df_sum_outliers %>%
-  select(all_of(x), starts_with(paste0(x, "_Outliers"))) %>%
-  rename_at(vars(starts_with(paste0(x, "_Outliers"))), ~str_remove(., paste0(x, "_Outliers_"))) %>%
-  pivot_longer(cols = -all_of(x), names_to = "Method", values_to = "Outlier_Status")
+  select(all_of(z), starts_with(paste0(z, "_Outliers"))) %>%
+  rename_at(vars(starts_with(paste0(z, "_Outliers"))), ~str_remove(., paste0(z, "_Outliers_"))) %>%
+  pivot_longer(cols = -all_of(z), names_to = "Method", values_to = "Outlier_Status")
 
-ggplot(df_var, aes(x = Method, y = NHIJOS, color = Outlier_Status)) +
-  geom_point() +
+outlier_plot <- ggplot(df_var, aes(x = Method, y = get(z), color = Outlier_Status)) +
+  geom_point(size = 0.4) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "blue")) +
   labs(
-    title = "Distribución de NHIJOS con Detección de Outliers",
+    title = paste("Distribución de", z, "con Detección de Outliers"),
     x = "Método de Detección de Outliers",
-    y = "NHIJOS",
+    y = z,
     color = "Outlier"
   )
+
+ggsave("./figure/outlier_plot_HD.png", plot = outlier_plot, width = 6, height = 3, dpi = 300)
+
+ggsave("./figure/outlier_plot.png", plot = outlier_plot, width = 5, height = 3, dpi = 80) # para que quepa en los márgenes...
+knitr::include_graphics("./figure/outlier_plot.png")
 ```
+
+En la Figura \ref{fig:seleccion_una_variable} podemos apreciar que los 3 primeros métodos (3$\sigma$, Boxplot, Hampel) han resultado muy permisivos con los outliers, mientras que el de percentiles ha eliminado bastantes valores, fruto de que el umbral superior de aceptación de no ser outlier era 83 años, como se observa en la Tabla \ref{tab:tabla_outliers_edad}.
+
 
 ```{r outliers_complete, eval = FALSE}
 # Lo dejo en eval = FALSE porque ocupa una cantidad de RAM desproporcionada tener esto:
@@ -715,24 +774,19 @@ df_sum_outliers_long <- df_sum_outliers %>%
 print(df_sum_outliers_long)
 ```
 
+Analizando nuestro conjunto de datos, hemos llegado a la conclusión de que los Outliers que aparecen no se deben en ningún caso a datos erróneos. Esto es así porque el INE ha debido de hacer un preprocesado de posibles valores incorrectos con anterioridad. Así pues, consideramos que carece de sentido imputarlos e incluso eliminarlos, ya que pueden resultar de interés 
 
-```{r}
-outlier_values <- unique(boxplot.stats(df$NHIJOS)$out)  # outlier values.
-boxplot(df$NHIJOS, main="Distancia", boxwex = 0.1)
-mtext(paste("Outliers: ", paste(outlier_values, collapse=", ")), cex = 0.6)
+## Análisis multivariante
 
-```
-
-
-## Análisis bivariante
-
-Como su nombre indica, la fase de análisis bivariante, consiste en la búsqueda de relación entre dos variables. Para ello existen diferentes formas de representación, en función del tipo de variables que se esté tratando tratando.
+Como su nombre indica, la fase de análisis multivariante, consiste en la búsqueda de relación entre dos variables. Para ello existen diferentes formas de representación, en función del tipo de variables que se esté tratando tratando.
 
 ### Gráficos
 
-#### Analisis entre dos variables numericas
-Un ejemplo de este tipo de analisis es el siguiente
-```{r}
+#### Analisis entre variables numericas
+
+Mediante la realización del siguiente gráfico se ha tratado de representar la relación existente entre las variables: edad (EDAD), número de hijos (NHIJOS) y grado de satisfacción con el tiempo de desplazamiento al trabajo (SATISTIEMP).
+
+```{r graf_dispersion, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Diagrama de dispersión para representar la relación entre EDAD, NHIJOS y SATISTIEMP", fig.pos = "H"}
 # Para una visualización sin na que no permiten visualizar los datos antes del tratamiento de
 # valores faltantes, se incluye lo siguiente
 
@@ -750,12 +804,13 @@ ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SATISTIEMP)) +
   labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad", y = "Nº hijos")
 
 ```
+El tipo de gráfico empleado se conoce como gráfico de dispersión. Como se puede observar en él, a medida que va aumentando la edad de las personas hasta los 40 años, también va aumentando en número de hijos. 
 
+#### Analisis entre variables numericas y categóricas
 
+En primer lugar, se ha realizado una representación de la edad de las personas en función de su sexo. Para esta representación, se ha generado un gráfico con dos histogramas. El de color azul para representar la edad de los hombres y el rojo para representar la edad de las mujeres.
 
-<!-- Númerica - Categórica -->
-
-```{r edad_by_sexo, echo=FALSE, include = TRUE}
+```{r edad_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Histograma de la variable EDAD en función de la variable SEXO", fig.pos = "H"}
 p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
   geom_freqpoly(binwidth = 1) +
   labs(
@@ -769,12 +824,25 @@ p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
 
 p_edad
 ```
-  <!-- En numérica categórica también iría el mapa -->
 
-#### Analisis de una variable numérica frente a una categórica
-```{r}
+Obtervando el gráfico obtenido, se puede ver como en el dataset y más mujeres que hombres a las que se ha realizado la encuesta para casi todas las edades excepto para las personas cuya edad va desde los 16 a los 30 años.
+
+  <!-- En numérica categórica también iría el mapa -->
+  
+Por último, se ha tratado de crear un gráfico para relacionar las variables: edad (EDAD), grado de participación en las tareas domésticas (TDOMEST) y estado civil (EC). Para ello, se ha empleado un gráfico de dispersión en el que el eje de abscisas representa la variable TDOMEST, el eje de ordenadas representa la variable EDAD y el color de cada uno de los puntos representa la variable EC.
+  
+```{r edad_by_tdomest_by_ec, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
+ggplot(df, aes(x = TDOMEST, y = EDAD, colour = EC)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+Analizando el gráfico obtenido, se observa como los jovenes solteros y los viudos son los que menos tareas realizan. También se aprecia como las personas divorciadas destacan entre los que realizan todas las tareas del hogar.
+
+#### Analisis entre variables categóricas.
+
+Por último, también es posible representar la relación entre varias variables categóricas. Para ello, lo más común es emplear el gráficos de barras o mosaicos. En la siguiente representación se ha expresado la relación entre la el campo de los estudios (CAMPO) con el sexo de las personas (SEXO).
+```{r campo_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
 df_plot <- df
-levels(df_plot$CAMPO)
+#levels(df_plot$CAMPO)
 
 etiquetas <- c( "Educ.","Artes","CC.SS","Negocios","Ciencias","Tec.",
                 "Arquit.","Agricult.","Salud","Otros","NA")
@@ -782,28 +850,22 @@ etiquetas <- c( "Educ.","Artes","CC.SS","Negocios","Ciencias","Tec.",
 
 ggplot(df_plot, aes(x = CAMPO, fill = SEXO)) +
   geom_bar(position = "dodge", stat = "count") +
-  labs(title = "Gráfico de Barras que relaciona Sexo y Campo de estudio", x = "Campo", y = "Frecuencia") +
+  labs(title = "Gráfico del campo de estudio por sexo", x = "Campo", y = "Frecuencia") +
   scale_fill_manual(values = c("Hombre" = "blue", "Mujer" = "pink"), na.value = "grey") +
   guides(fill = guide_legend(title = "Sexo"))+
-  scale_x_discrete(labels = etiquetas)
-
-```
-
-
-  <!-- Aquí podríamos poner una gráfica de barras en las que cada barra la pinta de un color en función de otra varible categórica -->
-
-## Análisis multivariante (todo lo que sea más de tres variables)
-
-```{r echo=FALSE, include=TRUE}
-ggplot(df, aes(x = TDOMEST, y = EDAD, colour = EC)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")) + 
+  scale_x_discrete(labels = etiquetas) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 ```
+Como se puede apreciar en el gráfico de barras anterior, hay campos de estudio en los que predominan los hombres frente a las mujeres, como es en el caso de las Arquitecturas. En otros campos pasa lo contrario, predominan las mujeres, como en el caso de la salud o la educación. 
 
   <!-- Aquí iría un mosaico de esos en los que se relacionan 3 o más variables -->
 
 ### Caracterización
 
-<!-- Mapa de correlaciones -->
+Otra forma de analizar la relación existente entre variables es mediante el cálculo de estadísticos. Como es el caso de las correlaciones o covarianzas para las variables numéricas. O la realización de contrastes de hipótesis para las variables categóricas.
+
+Para el caso de las variables numéricas, una técnica común es la creación de un mapa de correlaciónes con todas las variables del dataset. En nuestro caso, se corresponde con el siguiente.
 
 ```{r}
 # Seleccionamos las variables numéricas del dataframe
@@ -828,7 +890,7 @@ upper_tri <- get_upper_tri(corr_mat)
 melted_upper_tri <- melt(upper_tri, na.rm = TRUE)
 ```
 
-```{r echo=FALSE, include=TRUE}
+```{r corr_plot, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Mapa de correlaciones para las variable numéricas", fig.pos = "H"}
 ggplot(data = melted_upper_tri, aes(Var2, Var1, fill = value))+
  geom_tile(color = "white")+
  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
@@ -838,7 +900,7 @@ ggplot(data = melted_upper_tri, aes(Var2, Var1, fill = value))+
  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
     size = 12, hjust = 1))+
  coord_fixed() + 
-  geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
+  geom_text(aes(Var2, Var1, label = value), color = "black", size = 3) +
 theme(
   axis.title.x = element_blank(),
   axis.title.y = element_blank(),
@@ -846,15 +908,14 @@ theme(
   panel.border = element_blank(),
   panel.background = element_blank(),
   axis.ticks = element_blank(),
-  legend.justification = c(1, 0),
-  legend.position = c(0.6, 0.7),
-  legend.direction = "horizontal")+
-  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+  legend.justification = "right",
+  legend.position = "right",
+  legend.direction = "vertical")+
+  guides(fill = guide_colorbar(barwidth = 1, barheight = 7,
                 title.position = "top", title.hjust = 0.5))
 
 ```
-<!-- Tabla crosstable -->
-
+Analizando los resultados obtenidos, sólo se puede apreciar una dependencia entre los de variables EDAD y ANOESTUD, y, ANOESTUD y EDADESTUD. Entre el resto de variables numéricas no existe una dependencia.
 ### Resto de cosas hechas
 
 
