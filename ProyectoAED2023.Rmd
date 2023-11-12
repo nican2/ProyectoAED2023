@@ -77,7 +77,7 @@ Primeramente, se cargan todas las librearías necesarias en las diferentes fases
 ```{r librerias, message = F, include = T, echo = F}
 # Carga de librerías necesarias con pacman
 library(pacman)
-pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2, editrules, mice)
+pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2, editrules, mice, colorspace, leaflet, ggmap)
 ```
 
 A continuación, se realiza la carga del conjunto de datos, presente tanto en *.txt* como *.csv* en la carpeta *./data* incluida en el repositorio del proyecto. Asimismo, se carga el fichero .xlsx que nos muestra el diseño de registro y valores válidos de las variables. Este fichero será especialmente útil, puesto que permitirá una automatización para convertir el conjunto de datos, que actualmente se encuentra en estado Raw data, a Technically correct data, teniendo cada variable su tipo correspondiente.
@@ -262,7 +262,7 @@ data_info <- data.frame(
     "Situación laboral durante la última semana.",
     "¿Puede flexibilizar, adaptar o acomodar su jornada laboral?",
     "Lugar de trabajo",
-    "Grado de satisfacción en el tiempo de desplazamiento al trabajo.",
+    "Grado de satisfacción en el tiempo de desplazamiento al trabajo/estudio.",
     "Realización de compras por internet en el último mes.",
     "Tenencia de hijos.",
     "Número total de hijos.",
@@ -815,7 +815,7 @@ graf_dispersion <- ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SA
               size = 2, alpha = 0.05) +
   geom_jitter(size = 2, alpha = 0.5) +
   scale_color_gradient(low = "darkorchid4", high = "yellow") +
-  labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad / años", y = "Nº hijos") +
+  labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad / años", y = "Nº hijos") + 
   geom_line(data = df_test, aes(x = punto_medio, y = MediaHijos), color = "red", size = 1, show.legend = TRUE)
 
 ggsave("./figure/graf_dispersion_HD.png", plot = graf_dispersion, width = 6, height = 3, dpi = 300)
@@ -827,40 +827,87 @@ knitr::include_graphics("./figure/graf_dispersion.png")
 
 Este gráfico corresponde a uno de dispersión con puntos "jittered" o dispersos, lo que resulta útil dada la enorme superposición de puntos presentes. La línea roja se ha hecho a partir de las medias en el número de hijos para los intervalos "16-26", "27-36", "37-46", "47-56", "57-66", "67-76", "77-86", "87-96", "97-106", "107-116", cogiendo el punto medio en cada caso. Es evidente notar que hay una tendencia creciente en que el número de hijos sea mayor conforme la edad es mayor. Esto es lo que uno esperaría, ya que antiguamente en España se solían tener mayor cantidad de hijos. Vemos además que los **NA** para la variable SATISTIEMP (satisfacción por desplazamiento a estudio/trabajo) [color verde] está muy concentrada en edades avanzadas, resultado de que la mayoría de gente está jubilada.
 
-#### Analisis entre variables numéricas y categóricas
 
-En primer lugar, se ha realizado una representación de la edad de las personas en función de su sexo. Para esta representación, se ha generado un gráfico con dos histogramas. El de color azul para representar la edad de los hombres y el rojo para representar la edad de las mujeres.
+#### Análisis entre variables numéricas y categóricas
 
-```{r edad_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Histograma de la variable EDAD en función de la variable SEXO", fig.pos = "H"}
-p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
-  geom_freqpoly(binwidth = 1) +
-  labs(
-    title = "Distribución de edades en la encuesta",
-    x = "Edad / años",
-    y = "Frecuencia"
-  ) +
-  scale_color_manual(values = c("Hombre" = "blue", "Mujer" = "red")) +
-  theme_minimal() +
-  scale_x_continuous(breaks = seq(15, 120, by = 10))
+A partir del siguiente curioso gráfico podemos hacer una representación de este tipo. En este caso, relacionaremos la variable *SATISTIEMP* (Satisfacción en el tiempo al trabajo / estudio) junto con la variable categórica de provincia (*IDQ_PV*). Para poder tener algo de interacción se recomienda correr el código en .Rmd. 
 
-p_edad
+```{r mapa_satisfaccion, eval = FALSE}
+
+# Calcular el número medio de NHIJOS en cada provincia
+mean_satis <- df %>%
+  group_by(IDQ_PV) %>%
+  summarise(Mean_satistiemp = mean(SATISTIEMP, na.rm = TRUE))
+
+# Obtener las coordenadas de las capitales de provincia (previamente se ha usado una consulta a googleMaps con la API)
+load("./data/capital_locations.RData")
+load("./data/center_location.RData")
+
+capital_locations <- capital_locations %>%
+  mutate(IDQ_PV = unique(df$IDQ_PV))
+
+# Unir los datos de la media de NHIJOS con las coordenadas de las capitales
+capital_data <- merge(mean_satis, capital_locations, by = "IDQ_PV")
+capital_data$IDQ_PV <- paste(capital_data$IDQ_PV, "España")
+
+# Más colores
+n_colors <- 52
+colors <- diverging_hcl(n = n_colors, h = c(0, 255))
+breaks <- seq(min(capital_data$Mean_satistiemp), max(capital_data$Mean_satistiemp), length.out = 5)
+selected_colors <- colorRampPalette(colors)(5)
+
+mymap <- leaflet() %>%
+  addTiles(urlTemplate = 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png') %>%
+  setView(location$lon, location$lat, zoom = 6) %>%
+  addCircleMarkers(
+    data = capital_data,
+    radius = sqrt(capital_data$Mean_satistiemp) * 3, 
+    fillOpacity = 1, 
+    color = ~colorNumeric(colors, domain = NULL)(capital_data$Mean_satistiemp),
+    label = ~paste(IDQ_PV),
+    popup = ~paste("Media: ", Mean_satistiemp),
+    group = "Satisfaccion"
+  ) %>%
+  addLegend("bottomright", 
+    colors = selected_colors,
+    labels = round(breaks, 1),
+    title = "Media de SATISTIEMP",
+    group = "Satisfaccion") %>%
+  addScaleBar(
+    position = "bottomleft") %>%
+  addLayersControl(
+    overlayGroups = c("Satisfaccion")
+  )
+
+mymap
 ```
 
-Obtervando el gráfico obtenido, se puede ver como en el dataset y más mujeres que hombres a las que se ha realizado la encuesta para casi todas las edades excepto para las personas cuya edad va desde los 16 a los 30 años.
+A la vista del mapa, es claro apreciar que la media de satisfacción de desplazamiento es algo inferior al resto de sitios, seguida por Barcelona.
 
-  <!-- En numérica categórica también iría el mapa -->
   
 Por último, se ha tratado de crear un gráfico para relacionar las variables: edad (EDAD), grado de participación en las tareas domésticas (TDOMEST) y estado civil (EC). Para ello, se ha empleado un gráfico de dispersión en el que el eje de abscisas representa la variable TDOMEST, el eje de ordenadas representa la variable EDAD y el color de cada uno de los puntos representa la variable EC.
   
 ```{r edad_by_tdomest_by_ec, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
-ggplot(df, aes(x = TDOMEST, y = EDAD, colour = EC)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")) + 
+
+edad_tdomest_ec <- ggplot(df, aes(x = TDOMEST, y = EDAD, colour = EC)) + 
+  geom_point(size = 0.01) + 
+  geom_jitter(size = 0.01) + 
+  theme_minimal() + 
+  scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("./figure/edad_by_tdomest_by_ec_HD.png", plot = edad_tdomest_ec, width = 6, height = 3, dpi = 300)
+
+ggsave("./figure/edad_by_tdomest_by_ec.png", plot = edad_tdomest_ec, width = 5.4, height = 3, dpi = 80) # para que quepa en los márgenes...
+knitr::include_graphics("./figure/edad_by_tdomest_by_ec.png")
 ```
-Analizando el gráfico obtenido, se observa como los jovenes solteros y los viudos son los que menos tareas realizan. También se aprecia como las personas divorciadas destacan entre los que realizan todas las tareas del hogar.
+
+Analizando el gráfico obtenido, se observa como los jóvenes solteros y los viudos son los que menos tareas realizan. También se aprecia cómo las personas divorciadas destacan entre los que realizan todas las tareas del hogar.
 
 #### Analisis entre variables categóricas.
 
 Por último, también es posible representar la relación entre varias variables categóricas. Para ello, lo más común es emplear el gráficos de barras o mosaicos. En la siguiente representación se ha expresado la relación entre la el campo de los estudios (CAMPO) con el sexo de las personas (SEXO).
+
 ```{r campo_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
 df_plot <- df
 #levels(df_plot$CAMPO)
@@ -878,6 +925,7 @@ ggplot(df_plot, aes(x = CAMPO, fill = SEXO)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
 Como se puede apreciar en el gráfico de barras anterior, hay campos de estudio en los que predominan los hombres frente a las mujeres, como es en el caso de las Arquitecturas. En otros campos pasa lo contrario, predominan las mujeres, como en el caso de la salud o la educación. 
 
   <!-- Aquí iría un mosaico de esos en los que se relacionan 3 o más variables -->
@@ -934,90 +982,13 @@ theme(
   legend.direction = "vertical")+
   guides(fill = guide_colorbar(barwidth = 1, barheight = 7,
                 title.position = "top", title.hjust = 0.5))
-
 ```
+
 Analizando los resultados obtenidos, sólo se puede apreciar una dependencia entre los de variables EDAD y ANOESTUD, y, ANOESTUD y EDADESTUD. Entre el resto de variables numéricas no existe una dependencia.
+
+
+
 ### Resto de cosas hechas
-
-
-
-https://ggplot2.tidyverse.org/reference/geom_qq.html
-
-```{r numhijos_by_nacionalidad_separado}
-df_espana <- df %>%
-  filter(NACIM == "España") %>%
-  group_by(NHIJOS) %>%
-  summarize(RelativeFrequency = n() / nrow(.))
-
-df_otro_pais <- df %>%
-  filter(NACIM == "Otro país") %>%
-  group_by(NHIJOS) %>%
-  summarize(RelativeFrequency = n() / nrow(.))
-
-y_limits <- range(0, max(max(df_espana$RelativeFrequency), max(df_otro_pais$RelativeFrequency)))
-
-p_numhijos_espana <- ggplot(df_espana, aes(x = NHIJOS, y = RelativeFrequency)) +
-  geom_bar(stat = "identity", fill = "blue") +
-  labs(
-    title = "Número de hijos (España)",
-    x = "Número de Hijos",
-    y = "Frecuencia Relativa"
-  ) +
-  coord_cartesian(ylim = y_limits) +  
-  theme_minimal()
-
-p_numhijos_otro_pais <- ggplot(df_otro_pais, aes(x = NHIJOS, y = RelativeFrequency)) +
-  geom_bar(stat = "identity", fill = "red") +
-  labs(
-    title = "Número de hijos (Otro país)",
-    x = "Número de Hijos",
-    y = "Frecuencia Relativa"
-  ) +
-  coord_cartesian(ylim = y_limits) +  
-  theme_minimal()
-
-
-grid.arrange(p_numhijos_espana, p_numhijos_otro_pais, ncol = 2)
-
-```
-
-```{r numhijos_by_nacionalidad_junto}
-# Cálculo de frecuencias relativas para cada grupo
-
-df_grouped <- df %>%
-  group_by(NACIM, NHIJOS) %>%
-  summarize(RelativeFrequency = n() / nrow(df[df$NACIM == NACIM, ]))
-
-# Gráfico conjunto
-
-p_numhijos_merged <- ggplot(df_grouped, aes(x = NHIJOS, y = RelativeFrequency, fill = NACIM)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(
-    title = "Distribución del número de hijos por nacionalidad",
-    x = "Número de Hijos",
-    y = "Frecuencia Relativa"
-  ) +
-  scale_fill_manual(values = c("España" = "blue", "Otro país" = "red")) +
-  theme_minimal()
-
-p_numhijos_merged
-```
-
-```{r numhijos_by_nacionalidad_boxplot}
-p_boxplot_nacim <- ggplot(df, aes(x = NACIM, y = NHIJOS, fill = NACIM)) +
-  geom_boxplot(coef = 1.5, outlier.colour = "orange") +
-  labs(
-    title = "Número de hijos por nacionalidad",
-    x = "Nacionalidad",
-    y = "Número de hijos"
-  ) +
-  scale_fill_manual(values = c("España" = "blue", "Otro país" = "red")) +
-  theme_minimal()
-
-p_boxplot_nacim
-```
-
-Podemos observar que hay múltiples outliers, como consecuencia de que la inmensa mayoría de la gente suele estar dentro del rango intercuartílico para el número de hijos, siendo muy raro tener 6 hijos o más. Un tratamiento más riguroso para detectar las anomalías se realizará posteriormente.
 
 
 ## Busqueda de outliers multivariante
