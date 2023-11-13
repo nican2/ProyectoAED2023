@@ -23,22 +23,21 @@ abstract: |
   number of companies have emerged and grown, focusing their activities solely
   on data management. Through the implementation of this project, the aim is 
   to put into practice the concepts learned in the Exploratory Data Analysis
-  subject of the master's degree in Data Science. The project consists of
-  various stages. Firstly, the search for a suitable dataset. Next, the
-  loading of the dataset to be able to work with it in the programing language
-  in which the project has been carried out. Thirdly, the generation of
-  different graphs and tables to examine the characteristics of the study data,
-  as well as the analysis of anomalies in the dataset. As a result of the
-  analysis, information has been obtained regarding the different magnitudes
-  and relationships existing between the variables studied. Finally, through
-  the completion of this project, it has been possible to understand the
-  different phases and methodologies for conducting an exploratory data 
-  analysis.
+  subject of the Master's degree in Data Science. The project consists of
+  various stages. Firstly, the search for a suitable dataset. Next, the initial
+  preprocessing of the dataset after loading it to be able to work in the 
+  programing language in which the project has been carried out (R, in our case). 
+  Thirdly, the generation of different graphs and tables to examine the 
+  characteristics of the study data, as well as the analysis of anomalies in the 
+  dataset. As a result of the analysis, information has been obtained regarding 
+  the different magnitudes and relationships existing between the variables 
+  studied. 
   
 # back matter
 keywords: |
 
-  Análisis exploratorio de datos; Patrones en datos; Encuesta de población; Limpieza de datos
+  Análisis exploratorio de datos; Patrones en datos; Encuesta de población; Limpieza de datos;
+  Exploratory Data Analysis
   
 acknowledgement: |
 
@@ -61,7 +60,7 @@ output:
 
 # Introducción.
 
-El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nacional de Estadística (INE). En concreto, pertenece a una encuesta realizada a la población en el año 2021 que tiene como propósito el proporcionar información detallada sobre personas, viviendas y edificios que no puede obtenerse a través de registros administrativos. En nuestro caso, hemos decidido hacer la exploración en su mayoría de la parte relacionada a cuestiones que se les hizo a adultos (personas de 16 años o más). Para agregar más variables de interés se escogieron algunas de otro conjunto de datos, también de esta encuesta, hecho a todos los integrantes de la vivienda y no solo a adultos. El enlace a los ficheros de microdatos se encuentra disponible en el siguiente [enlace](https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177092&menu=resultados&idp=1254735572981#!tabs-1254736195790).
+El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nacional de Estadística (INE). En concreto, pertenece a una encuesta realizada a la población en el año 2021 que tiene como propósito el proporcionar información detallada sobre personas, viviendas y edificios que no puede obtenerse a través de registros administrativos. En nuestro caso, hemos decidido hacer la exploración en su mayoría de la parte relacionada a cuestiones que se les hizo a adultos (personas de 16 años o más). Para agregar más variables de interés se escogieron algunas de otro conjunto de datos, también de esta encuesta, hecho a todos los integrantes de la vivienda y no solo a adultos. El enlace a los ficheros de microdatos se encuentra disponible [aquí](https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177092&menu=resultados&idp=1254735572981#!tabs-1254736195790).
 
 ## Carga de librerías y datos necesarios para el análisis
 
@@ -69,20 +68,21 @@ El conjunto de datos que se utiliza para el análisis pertenece al Instituto Nac
 # Configuración general de chunks
 library(knitr)
 options(width = 100)
-knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, dpi = 80, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F, fig.width = 5.0, fig.height = 4, fig.align = "left")
+knitr::opts_chunk$set(echo = F, message = F, error = F, warning = F, comment = NA, tidy = F, cache.path = '.cache/', fig.path = './figure/', include = F, fig.width = 5.0, fig.height = 4, fig.align = "left")
 ```
 
-Primeramente, se cargan todas las librearías necesarias en las diferentes fases del proyecto.
+Primeramente, se cargan todas las librerías necesarias en las diferentes fases del proyecto. Esto se hace de manera más elegante utilizando el paquete `pacman` nuestro lenguaje de programación, R.
 
 ```{r librerias, message = F, include = T, echo = F}
 # Carga de librerías necesarias con pacman
 library(pacman)
-pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2, editrules)
+pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2, editrules, mice, colorspace, leaflet, ggmap, ggmosaic)
 ```
 
-A continuación, se realiza la carga del conjunto de datos, presente tanto en *.txt* como *.csv* en la carpeta *./data* incluida en el repositorio del proyecto. Asimismo, se carga el fichero .xlsx que nos muestra el diseño de registro y valores válidos de las variables. Este fichero será especialmente útil, puesto que permitirá una automatización para convertir el conjunto de datos, que actualmente se encuentra en estado Raw data, a Technically correct data, teniendo cada variable su tipo correspondiente.
+A continuación, se realiza la carga del conjunto de datos, presente tanto en *.txt* como *.csv* en la carpeta *./data* incluida en el repositorio del proyecto. Asimismo, se carga el fichero *.xlsx* que nos muestra el diseño de registro y valores válidos de las variables. Este fichero será especialmente útil, puesto que permitirá una automatización para convertir el conjunto de datos, que actualmente se encuentra en estado *Raw data* a *Technically correct data*, teniendo cada variable su tipo correspondiente.
 
 ```{r extraccion_dataset_csv}
+# Carga del dataset haciendo uso de un formato estructurado
 ruta_csv <- "data/ECEPOVadultos_2021.csv"
 df_1 <- read_delim("data/ECEPOVadultos_2021.csv", 
     delim = "\t", escape_double = FALSE, 
@@ -91,6 +91,7 @@ df_1 <- read_delim("data/ECEPOVadultos_2021.csv",
 ```
 
 ```{r lectura_dataset_readLines, eval = FALSE}
+# Carga del dataset como si fuera un archivo sin formato
 ruta_txt <- "./data/md_ECEPOVadultos_2021.txt"
 lines <- readLines(ruta_txt)
 
@@ -127,7 +128,9 @@ colnames(df_1) <- excel_info_1$Variable
 
 ```
 
+
 ```{r lectura_diseno}
+# Archivos para la automatización
 ruta_excel <- "data/dr_ECEPOVadultos_2021.xlsx"
 excel_info_1 <- read_excel(ruta_excel, sheet = "Diseño", range = "A2:H50", col_names = TRUE)
 
@@ -137,7 +140,7 @@ Tablas2 <- read_excel(ruta_excel, sheet = "Tablas2", range = "A4:C112", col_name
 Tablas3 <- read_excel(ruta_excel, sheet = "Tablas3", range = "A4:C48", col_names = TRUE)
 ```
 
-A pesar de que resultó de gran utilidad el fichero que ofrecía INE para la transformación de las variables a un tipo correspondiente, surgieron algunos fallos que se debieron solventar de manera manual. Determinadas variables no fueron adecuadamente codificadas por parte del INE, de tal forma que fue necesario que modificar ligeramente el fichero .xlsx. Concretamente, algunos diccionarios de variables en los que no terminaba de estar correctamente determinado el código (lo que sería el level en un factor). El problema presentado (en algunas variables) consistía, básicamente, en que aparecía "01" en lugar de "1", valor recogido en las observaciones.
+A pesar de que resultó de gran utilidad el fichero que ofrecía INE para la transformación de las variables a un tipo correspondiente, surgieron algunos fallos que se debieron solventar de manera manual. Determinadas variables no fueron adecuadamente codificadas por parte del INE, de tal forma que fue necesario modificar ligeramente el fichero *.xlsx*. Concretamente, algunos diccionarios de variables en los que no terminaba de estar correctamente determinado el código (lo que sería el level en un factor). El problema presentado (en algunas variables) consistía, básicamente, en que aparecía "01" en lugar de "1", valor recogido en las observaciones del dataset.
 
 ```{r conversion_dataset}
 # Cambio manual por datos mal introducidos "2 " --> "2" para la posterior lectura con el diccionario
@@ -170,7 +173,7 @@ dic_table <- excel_dic$`Diccionario ubicado en la hoja…`
 for (i in seq_along(dic_vars)) {
   
   dataframe_name <- dic_table[i]  
-  df_table <- get(dataframe_name)
+  df_table <- get(dataframe_name) # con get conseguimos el nombre extrayendolo del string
   positions <- which(df_table == dic_var[i], arr.ind = TRUE) # obtener posición donde se encuentra la palabra del diccionario 
   
   if (length(positions) > 0) {
@@ -193,15 +196,14 @@ for (i in seq_along(dic_vars)) {
 }
 ```
 
-Una vez está hecha la conversión del dataset que contaba con un mayor número de variables se procede a hacer una unión con el otro dataset mencionado anteriormente, solo utilizando algunas variables de interés como SEXO o EDAD.
-
+Una vez hecha la conversión del dataset que contaba con un mayor número de variables se decidió que era de especial interés hacer una unión con el otro dataset mencionado al inicio, con el fin de obtener variables interesantes como  `SEXO` o `EDAD`.
 
 ```{r seleccion_columnas}
 columnas_a_leer <- c("IDEN", "NPV", "FACTOR", "SEXO", "EDAD", "NACIM", "PNACIM")
 df_2 <- read_dta("./data/ECEPOVhogar_2021.dta", col_select = columnas_a_leer)
 ```
 
-Las variables SEXO, NACIM y PNACIM de este nuevo dataset deben ser convertidas a sus tipos correspondientes, por lo que se hace uso de la información que proporciona el INE sobre dichas variables.
+Las variables `EDAD`, `SEXO`, `NACIM` y `PNACIM` de este nuevo dataset deben ser convertidas a sus tipos correspondientes, por lo que se hace uso de la información que proporciona el INE sobre dichas variables, de manera similar a como se hizo anteriormente.
 
 ```{r lectura_diseno_2}
 ruta_excel_2 <- "./data/dr_ECEPOVhogar_2021.xlsx"
@@ -221,7 +223,7 @@ df_2 <- df_2 %>%
   mutate(PNACIM = factor(PNACIM, levels = T_PAIS$Código, labels = T_PAIS$Descripción))
 ```
 
-Por último, para lograr la unión de ambos datasets, se emplea la función *merge* utilizando las variables de identificación IDEN, NPV y FACTOR, de tal manera que podamos establecer una relación unívoca entre los adultos presentes en el primer y segundo dataset.
+Para lograr la unión de ambos datasets, se emplea la función `left_join` del paquete `dplyr` utilizando las variables de identificación `IDEN`, `NPV` y `FACTOR`, de tal manera que podamos establecer una relación unívoca entre los adultos presentes en el primer y segundo dataset.
 
 ```{r union_datasets}
 # sin dplyr: df_merged <- merge(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "NACIM", "PNACIM")], by = c("IDEN", "NPV", "FACTOR"), all.x = TRUE)
@@ -230,26 +232,25 @@ df_merged <- left_join(df_1, df_2[, c("IDEN", "NPV", "FACTOR", "EDAD", "SEXO", "
 
 ## Características generales de los datos
 
-Es posible hacerse una idea rápida de cuáles son los datos pertenecientes al dataframe, *df*, haciendo uso de la función *glimpse*, perteneciente a la librería *dplyr*. 
+Es posible hacerse una idea rápida de cuáles son los datos pertenecientes al dataframe, *df_merged*, haciendo uso de la función *glimpse*, perteneciente a la librería `dplyr`.
 
 ```{r glimpse}
 dplyr::glimpse(df_merged, width = 60)
 ```
 
-Se observa que es un dataset con total de 361934 observaciones y con 52 variables, lo cual es mucho más de lo que se puede abarcar en un análisis exploratorio como el que se requiere en este trabajo.
+En resumen, nuestro dataset cuenta con `r nrow(df)` observaciones y con `r ncol(df)` variables. Muchas de estas variables no nos serán de utilidad para las preguntas que deseamos responder, por lo que convendrá deshacernos de ellas por una cuestión de comodidad y optimización
+en los cálculos. Las variables están explicadas en *dr_ECEPOVadultos_2021.xlsx* y  
+*dr_ECEPOVhogar_2021.xlsx*. Tras un análisis detallado, las variables que nos convienen rescatar son las mostradas en la Tabla \ref{tab:tabla_vars_usadas}.
 
-Tras un análisis de las variables en *dr_ECEPOVadultos_2021.xlsx* y  
-*dr_ECEPOVhogar_2021.xlsx*, se ha considerado que muchas de las variables no nos otorgarán interés para el análisis que particularmente se desea aplicar, por lo que se seleccionaran aquellasvariables consideradas más relevantes.
-
-
-```{r variables_usadas, include = T}
+```{r variables_usadas}
 data_info <- data.frame(
-  Variable = c(
+  Variable = c("IDEN",
     "IDQ_PV", "TAM_MUNI", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD",
     "EDADESTUD", "CAMPO", "SITLAB", "FLEXI", "LUGTRAB", "SATISTIEMP", "COMPRAINT", "HIJOS",
     "NHIJOS", "TDOMEST", "SEXO", "EDAD", "NACIM", "PNACIM"
   ),
   Descripción = c(
+    "Identificador de la vivienda",
     "Código de la provincia de residencia.",
     "Tamaño del municipio.",
     "Estado civil legal.",
@@ -261,7 +262,7 @@ data_info <- data.frame(
     "Situación laboral durante la última semana.",
     "¿Puede flexibilizar, adaptar o acomodar su jornada laboral?",
     "Lugar de trabajo",
-    "Grado de satisfacción en el tiempo de desplazamiento al trabajo.",
+    "Grado de satisfacción en el tiempo de desplazamiento al trabajo/estudio.",
     "Realización de compras por internet en el último mes.",
     "Tenencia de hijos.",
     "Número total de hijos.",
@@ -272,7 +273,9 @@ data_info <- data.frame(
     "País de nacimiento exacto de la persona."
   )
 )
+```
 
+```{r tabla_vars_usadas, fig.cap = "\\label{tab:tabla_vars_usadas}", include = TRUE}
 knitr::kable(data_info, format = "latex",
              booktabs = TRUE, 
              caption = "Variables de interés para el estudio.", 
@@ -281,7 +284,7 @@ knitr::kable(data_info, format = "latex",
 ```
 
 ```{r seleccion_variables}
-var_interes <- c("IDQ_PV", "TAM_MUNI", "SEXO", "EDAD", "NACIM", "PNACIM", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "FLEXI", "LUGTRAB", "SATISTIEMP", "COMPRAINT", "NHIJOS", "HIJOS", "TDOMEST")
+var_interes <- c("IDEN", "IDQ_PV", "TAM_MUNI", "SEXO", "EDAD", "NACIM", "PNACIM", "EC", "EDADEC", "ESTUDIOS", "ANOESTUD", "EDADESTUD", "CAMPO", "SITLAB", "FLEXI", "LUGTRAB", "SATISTIEMP", "COMPRAINT", "NHIJOS", "HIJOS", "TDOMEST")
   
 df <- df_merged %>%
   dplyr::select(var_interes)
@@ -290,7 +293,8 @@ df <- df_merged %>%
 ```{r glimpse_reducido}
 glimpse(df, width = 60)
 ```
-En primer lugar, ahora que tenemos un conjunto más reducido, podemos cerciorarnos que algunas reglas se cumplen. Para ello, utilizamos el paquete **editrules**, para posteriormente aplicarlo sobre nuestro dataframe reducido, **df**.
+
+En primer lugar, ahora que tenemos un conjunto más reducido, podemos cerciorarnos que algunas reglas sencillas se cumplen, como que las variables de `EDAD`, `EDADEC`, `SATISTIEMP`, `ANOESTUD` estén entre intervalos numéricos coherentes. Para ello, utilizamos el paquete `editrules`, para posteriormente aplicarlo sobre nuestro dataframe reducido, **df**.
 
 ```{r reglas_vars}
 E <- editfile("./data/reglasER.txt")
@@ -298,20 +302,21 @@ E
 
 # También puede hacerse con if, pero esto es más elegante
 ```
+
 ```{r violated_rules}
 ve <- violatedEdits(E, df)
 summary(ve)
 ```
-El NULL obtenido indica que no se han encontrado datos que incumplan las reglas presentes en **./data/reglasER.txt**.
 
+Tras aplicar estas reglas a nuestro conjunto de datos, obtenemos que no hay ninguna violación de estas (obtenemos un NULL), por lo que no será necesario hacer una imputación o eliminado de dichas observaciones.
 
 ## Análisis de missing data en nuestro conjunto de interés
 
-Una representación precisa de cómo se distribuyen los *missing values* por nuestro conjunto de datos lo otorga la librería *VIM* con la función *aggr*. Se han representado solamente aquellas variables que cuentan con algún NA para facilitar la visualización. En el siguiente gráfico puede observarse tanto la proporción total de valores faltantes en dichas variables individualmente (izquierda), como una serie de combinaciones posibles entre ellas de valores faltantes. 
+Una representación precisa de cómo se distribuyen los *missing values* por nuestro conjunto de datos lo otorga la librería `VIM` con la función `aggr()`. Se han representado solamente aquellas variables que cuentan con algún NA para facilitar la visualización. En la Figura \ref{fig:missing_values} puede observarse tanto la proporción total de valores faltantes en dichas variables individualmente (izquierda), como una serie de combinaciones posibles entre ellas de valores faltantes. 
 
-Así, encontramos por ejemplo que la combinación de NA en (SATISTIEMP, FLEXI, ANOESTUD, EDADESTUD, CAMPO, LUGTRAB, EDADEC) cuenta con una proporción del 26 % de los datos totales.
+Así, encontramos por ejemplo que la combinación de NA en (`SATISTIEMP`, `FLEXI`, `ANOESTUD`, `EDADESTUD`, `CAMPO`, `LUGTRAB`) cuenta con una proporción del 25 % de los datos totales.
 
-```{r missing_values, include = T, fig.width = 5.9, fig.height = 5, fig.align = "left"}
+```{r missing_values, include = T, fig.width = 5.9, fig.height = 5, fig.align = "left", fig.cap = "Esquema de valores missing en nuestro dataset\\label{fig:missing_values}", fig.pos = "H"}
 aggr_result <- capture.output({
   df %>%
     select_if(~ anyNA(.)) %>%
@@ -321,24 +326,25 @@ aggr_result <- capture.output({
 # Mostrar solo el plot sin el data.frame para el Rmd
 invisible(aggr_result)
 ```
-Podemos observar en el gráfico de la izquierda que hay proporciones de missings que parecen repetirse. Esto nos da pie a plantearnos si acaso existe una razón tras ellos más allá de la pura aleatoriedad (*missing completely at random*). Quizás existen variables observadas en nuestro conjunto de datos que según tengan un valor u otro inducen un *NA* en otras variables...
+
+Podemos observar en el gráfico de barras de la izquierda que hay proporciones de missings que parecen repetirse. Esto nos da pie a plantearnos si acaso existe una razón tras ellos más allá de la pura aleatoriedad (*missing completely at random*). Quizás existen variables observadas en nuestro conjunto de datos que según tengan un valor u otro inducen un *NA* en otras variables...
 
 Esta cuestión puede hacerse frente utilizando la información adicional que INE nos proporciona para la base de datos. En este caso, haremos uso del [cuestionario](https://www.ine.es/metodologia/cuestionario_ECEPOV.pdf) dado. Se llega a las siguientes conclusiones:
 
 
-- Si la variable **EC** (*Estado civil*) es "Soltero/a" $\Rightarrow$ la variable **EDADEC** debe contener un *NA*.
+- Si la variable `EC` (*Estado civil*) es "Soltero/a" $\Rightarrow$ la variable `EDADEC` debe contener un *NA*.
 
-- Si la variable **ESTUDIOS** es una de estas: "No sabe leer o escribir", "Sabe leer y escribir pero fue menos de 5 años a la escuela", "Educación primaria completa o fue a la escuela al menos 5 años", "Primera etapa de educación secundaria y similar (EGB, Bachiller elemental, ESO, certificado de Estudios Primarios, certificado de Escolaridad o certificado de Profesionalidad niveles 1 o 2)" $\Rightarrow$ las variables **ANOESTUD**, **EDADESTUD** y **CAMPO** deben contener un *NA*.
+- Si la variable `ESTUDIOS` es una de estas: "No sabe leer o escribir", "Sabe leer y escribir pero fue menos de 5 años a la escuela", "Educación primaria completa o fue a la escuela al menos 5 años", "Primera etapa de educación secundaria y similar (EGB, Bachiller elemental, ESO, certificado de Estudios Primarios, certificado de Escolaridad o certificado de Profesionalidad niveles 1 o 2)" $\Rightarrow$ las variables `ANOESTUD`, `EDADESTUD` y `CAMPO` deben contener un *NA*.
 
-- Si la variable **SITLAB** (*Situación laboral actual*) es **distinta** de "Ocupado/a" (a tiempo completo o a tiempo parcial) $\Rightarrow$ la variable **FLEXI** (*Flexibilidad en el horario de trabajo*) se pone como *NA*, automáticamente.
+- Si la variable `SITLAB` (*Situación laboral actual*) es **distinta** de "Ocupado/a" (a tiempo completo o a tiempo parcial) $\Rightarrow$ la variable `FLEXI` (*Flexibilidad en el horario de trabajo*) se pone como *NA*, automáticamente.
 
-- Por otra parte, de manera relacionada a la anterior, la variable **SATISTIEMP** puede aparecer con un valor distinto de *NA* solo si la categoría de **SITLAB** es "Ocupado/a" (a tiempo completo o a tiempo parcial) o "Estudiante" *Y* además la variable **LUGTRAB** es distinta de "En el propio domicilio" o "En varios municipios (soy comercial, repartidor, taxista...)". 
+- Por otra parte, de manera relacionada a la anterior, la variable `SATISTIEMP` puede aparecer con un valor distinto de *NA* solo si la categoría de `SITLAB` es "Ocupado/a" (a tiempo completo o a tiempo parcial) o "Estudiante" **Y** además la variable `LUGTRAB` es distinta de "En el propio domicilio" o "En varios municipios (soy comercial, repartidor, taxista...)". 
 
-- La variable **NHIJOS** (*número de hijos*) se pone como NA si y solo si la variable booleana **HIJOS** (¿ha tenido hijos?) está en "No".
+- La variable `NHIJOS` (*número de hijos*) se pone como *NA* si y solo si la variable booleana `HIJOS` (¿ha tenido hijos?) está en "No".
 
 **Nota**: es importante recalcar que en el propio cuestionario se pedía que a las personas encuestadas que estuvieran *teletrabajando* debido al COVID-19 respondieran teniendo en cuenta su situación anterior. 
 
-Esta serie de conclusiones de pertenencia de NA no se comprueban en R.
+Esta serie de conclusiones de pertenencia de NA o no se comprueban en el código presente en el *.Rmd* del directorio.
 
 ```{r verify_missing}
 verif_EC <- sum(df$EC == "Soltero/a" & !is.na(df$EDADEC)) == 0 & sum((is.na(df$EDADEC) & df$EC != "Soltero/a")) == 0
@@ -381,6 +387,7 @@ if (all(verif_EC, verif_ESTUD, verif_SITLAB, verif_SATISTIEMP, verif_HIJOS)) {
 
 # Todas se satisfacen. Si sale que no es porque df se ha visto modificado.
 ```
+
 Habiéndose cumplido lo que prometía el INE podemos asegurar que en nuestro conjunto de datos (al menos en nuestras variables seleccionadas de interés) no hay ningún ningún valor que se haya perdido estrictamente. Todos los NA responden a que determinadas variables (presentes en el dataset) toman un valor u otro.
 
 En nuestro análisis, hemos decidido que los únicos valores *NA* que pueden cobrar sentido y ser imputados son los de la variable **NHIJOS**, ya que consideramos que con 16 años (edad mínima en nuestro conjunto de datos) este valor no tendría por qué ser siempre 0. Esto permitirá que en las gráficas de NHIJOS el mínimo no sea 1, sino 0.
@@ -536,99 +543,359 @@ qqplot_edad <- ggplot(df, aes(sample = EDAD)) +
   ylab("Edad / años") + 
   theme_minimal()
 
-qqplot_edad
+ggsave("./figure/qqplot_edad_HD.png", plot = qqplot_edad, width = 4, height = 3, dpi = 300)
+
+ggsave("./figure/qqplot_edad.png", plot = qqplot_edad, width = 3.5, height = 2, dpi = 80) # para que quepa en los márgenes...
+knitr::include_graphics("./figure/qqplot_edad.png")
 ```
 
 ### Variables de tipo categórico
 
 A diferencia de las variables numérica, en las variables categóricas no es posible obtener muchos estadísticos. El más común es la moda, que se corresponde con la columna *topCount* de la tabla 2.
 
-Otra información que se puede analizar en el análisis univariante de una variable categórica es la frecuencia de aparición de cada una de las categorías. Esto es posible representarlo visualmente mediante un gráfico de barras. Es por ello que se ha realizado dicho gráfico para explicar los datos de la variable *SITLAB*
+Otra información que se puede analizar en el análisis univariante de una variable categórica es la frecuencia de aparición de cada una de las categorías.
+Se representa esto en la Tabla \ref{tab:tabla_freq}. Es posible también representarlo visualmente mediante un gráfico de barras como en la Figura \ref{fig:sitlab_freq}. Es por ello que se ha realizado dicho gráfico para explicar los datos de la variable *SITLAB*.
 
-```{r}
-frecuencias <- data.frame(Situacion = df$SITLAB) %>% count(Situacion)
+```{r kable_SITLAB_sum}
+SITLAB_freq <- df %>%
+  select(SITLAB) %>%
+  group_by(SITLAB) %>%
+  count()
 ```
 
 
-```{r sitlab_bar, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 4, fig.align = "center", fig.cap = "Diagrama de barras para la variable SITLAB", fig.pos = "H"}
-ggplot(frecuencias, aes(x = reorder(Situacion, -n), y = n, fill = n)) +
+```{r tabla_freq, fig.cap = "\\label{tab:tabla_freq}", include = TRUE}
+kable_sumnum <- knitr::kable(SITLAB_freq, format = "latex",
+             booktabs = TRUE, 
+             caption = "Frecuencias de cada grupo según su situación laboral.", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table", position = "H",
+             tabular.environment = "tabularx")
+
+kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRUE)
+```
+
+
+```{r sitlab_bar, echo = FALSE, include = TRUE, fig.align = "center", fig.cap = "Diagrama de barras para la variable SITLAB.\\label{fig:sitlab_freq}", fig.pos = "H", fig.width = 5, fig.height = 3.5}
+
+ggplot(SITLAB_freq, aes(x = reorder(SITLAB, -n), y = n, fill = n)) +
   geom_bar(stat = "identity",
            col = "black") +
-  labs(title = "Diagrama de Barras de la Situación Laboral",
-       x = "Categoría",
-       y = "Frecuencia") +
+  ggtitle("Diagrama de barras de la Situación Laboral") +
+  xlab("Categoría") +
+  ylab("Frecuencia") +
   theme(axis.text.x = element_text(angle = 70, hjust = 1)) +
   scale_fill_gradient(low = "lightblue", high = "darkblue") +
   scale_x_discrete(labels = c("Jornada completa", "Pre/Jubilado/a", "Parado/a (Extrabajador/a)", "Estudiante", "Tareas del hogar", "Jornada parcial", "Incapacitado/a", "Otra inactividad", "Parado/a (No ha trabajado)"))
 ```
 
-Tal y como se aprecia en el gráfico, en el momento en que se realizó la encuesta, predominaban claramente las personas ocupadas a tiempo completo. Seguidas de las jubiladas.
+Tal y como se aprecia en el gráfico, en el momento en que se realizó la encuesta, predominaban claramente las personas ocupadas a tiempo completo, seguidas de las jubiladas o prejubiladas. Por otra parte, las personas paradas que no hubieran nunca trabajado representaban el grupo más pequeño.
+
+### Análisis de outliers univariante
+
+Para la detección de outliers, observaciones que parecen "diverger" del patrón de comportamiento del resto de datos, resulta fundamental establecer un criterio para su identificación. En nuestro caso, hemos utilizado 4 métodos diferentes:
+
+- Regla 3 $\sigma$: asume distribución gaussiana seguida por los datos.
+- Identificador Hampel: no presupone distribución gaussiana y utiliza la mediana.
+- Regla boxplot: a partir del boxplot se identifican como lo que queda fuera de los bigotes.
+- Regla $P_5 - P_{95}$ de percentiles: lo que queda por debajo del 5% o por encima del 95% es tratado como outlier.
+
+```{r detecta_outliers_function}
+
+detectar_outliers <- function(data, methods = c("tresSigma")) {
+  n <- length(data)
+  nMiss <- sum(is.na(data) == TRUE)
+  result_list <- list()
+  
+  if ("tresSigma" %in% methods) {
+    # Método tresSigma
+    umbral3s <- 3 * sd(data)
+    nOut3s <- length(data[abs(data - mean(data)) > umbral3s])
+    lowLim3s <- mean(data) - 3 * sd(data)
+    upLim3s <- mean(data) + 3 * sd(data)
+    minNom <- min(data[which(data >= lowLim3s)])
+    maxNom <- max(data[which(data <= upLim3s)])
+
+    outliers <- data.frame(method = 'tresSigma', n = n, nMiss = nMiss, nOut = nOut3s, lowLim = lowLim3s, upLim = upLim3s, minNom = minNom, maxNom = maxNom)
+    result_list[["tresSigma"]] <- outliers
+  }
+
+  if ("Hampel" %in% methods) {
+    # Método Hampel
+    MADM <- mad(data)
+    umbral3s <- 3 * MADM
+    nOut3s <- length(data[abs(data - median(data)) > umbral3s])
+    lowLim3s <- median(data) - 3 * MADM
+    upLim3s <- median(data) + 3 * MADM
+    minNom <- min(data[which(data >= lowLim3s)])
+    maxNom <- max(data[which(data <= upLim3s)])
+
+    outliers <- data.frame(method = 'Hampel', n = n, nMiss = nMiss, nOut = nOut3s, lowLim = lowLim3s, upLim = upLim3s, minNom = minNom, maxNom = maxNom)
+    result_list[["Hampel"]] <- outliers
+  }
+
+  if ("ReglaBoxplot" %in% methods) {
+    # Método ReglaBoxplot
+    Q3Q1 <- IQR(data)
+    Q3 <- quantile(data, probs = 0.75) %>% as.numeric()
+    Q1 <- quantile(data, probs = 0.25) %>% as.numeric()
+    umbralSup <- Q3 + 1.5 * Q3Q1
+    umbralInf <- Q1 - 1.5 * Q3Q1
+
+    nOut3s <- length(data[data > umbralSup | data < umbralInf])
+    lowLim3s <- umbralInf
+    upLim3s <- umbralSup
+    minNom <- min(data[which(data >= lowLim3s)])
+    maxNom <- max(data[which(data <= upLim3s)])
+
+    outliers <- data.frame(method = 'ReglaBoxplot', n = n, nMiss = nMiss, nOut = nOut3s, lowLim = lowLim3s, upLim = upLim3s, minNom = minNom, maxNom = maxNom)
+    result_list[["ReglaBoxplot"]] <- outliers
+  }
+
+  if ("p5-p95" %in% methods) {
+    # Método p5-p95
+    lowLim <- quantile(data, 0.05)
+    upLim <- quantile(data, 0.95)
+    minNom <- min(data[which(data > lowLim)])
+    maxNom <- max(data[which(data < upLim)])
+    nOut <- length(which(data < lowLim | data > upLim))
+
+    outliers <- data.frame(method = 'p5-p95', n = n, nMiss = nMiss, nOut = nOut, lowLim = lowLim, upLim = upLim, minNom = minNom, maxNom = maxNom)
+    result_list[["p5-p95"]] <- outliers
+  }
+
+  return(result_list)
+}
+```
+
+Una aplicación de los 4 métodos a la variable EDAD lleva a la obtención de la Tabla \ref{tab:tabla_outliers_edad}.
+
+```{r det_outliers_test}
+methods_to_apply <- c("tresSigma", "Hampel", "ReglaBoxplot", "p5-p95")
+outliers_var <- detectar_outliers(na.omit(df$EDAD), methods = methods_to_apply)
+outliers_var <- bind_rows(outliers_var)
+rownames(outliers_var) <- NULL # quitar nombres feos de rownames
+```
+
+
+```{r tabla_outliers_edad, fig.cap = "\\label{tab:tabla_outliers_edad}", include = TRUE}
+kable_sumnum <- knitr::kable(outliers_var, format = "latex",
+             booktabs = TRUE, 
+             caption = "Identificación de Outliers de la variable EDAD.", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table", position = "H",
+             tabular.environment = "tabularx")
+
+kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRUE)
+```
+
+En esta tabla apreciamos el método empleado (*Method*), el número de observaciones totales de la variable *n*, el número de datos perdidos *nMiss*, el número de outliers total detectado *nOut*, el extremo inferior y superior del cálculo (*lowLim* y *upLim*), así como el mínimo y máximo de la variable que han sido recogidos sin entrar en la identificación como outlier (*minNom* y *maxNom*).  
+
+Más allá de esto, es posible identificar visualmente los outliers en una representación gráfica, tal y como se muestra en la Figura \ref{fig:seleccion_una_variable} para la variable EDAD. Una generalización a todas las variables numéricas se ha realizado en el código de R para la identificación de los Outliers, pero no se mostrará por cuestiones de espacio.
+
+```{r funciones_detectar_separadas}
+# Puedo poner na.rm = TRUE por lo analizado anteriormente, ya que carece de sentido imputar valores
+
+detect_outliers_3sigma <- function(x) {
+  umbral3s <- 3 * sd(x, na.rm = TRUE)
+  return(ifelse(abs(x - mean(x, na.rm = TRUE)) > umbral3s, TRUE, FALSE))
+}
+
+# Función para detectar outliers usando el método de Hampel
+detect_outliers_hampel <- function(x) {
+  MADM <- mad(x, na.rm = TRUE)
+  umbralHampel <- 3 * MADM
+  return(ifelse(abs(x - median(x, na.rm = TRUE)) > umbralHampel, TRUE, FALSE))
+}
+
+# Función para detectar outliers usando el método de boxplot
+detect_outliers_boxplot <- function(x) {
+  Q3Q1 <- IQR(x, na.rm = TRUE)
+  Q3 <- quantile(x, probs = 0.75, na.rm = TRUE)
+  Q1 <- quantile(x, probs = 0.25, na.rm = TRUE)
+  umbralSup <- Q3 + 1.5 * Q3Q1
+  umbralInf <- Q1 - 1.5 * Q3Q1
+  return(ifelse(x < umbralInf | x > umbralSup, TRUE, FALSE))
+}
+
+# Función para detectar outliers usando percentiles
+detect_outliers_percentiles <- function(x) {
+  lowLim <- quantile(x, 0.05, na.rm = TRUE)
+  upLim <- quantile(x, 0.95, na.rm = TRUE)
+  return(ifelse(x < lowLim | x > upLim, TRUE, FALSE))
+}
+```
+
+
+```{r clasificacion_outliers_vars_num}
+# Aplicar las funciones para detectar outliers a todas las variables numéricas
+df_sum_outliers <- df %>%
+  mutate(across(where(is.numeric), list(
+    Outliers_3sigma = ~detect_outliers_3sigma(.),
+    Outliers_Hampel = ~detect_outliers_hampel(.),
+    Outliers_Boxplot = ~detect_outliers_boxplot(.),
+    Outliers_Percentiles = ~detect_outliers_percentiles(.)
+  )))
+head(df_sum_outliers, 10)
+```
+
+**Nota importante**. La calidad de ciertas imágenes se ha debido disminuir pasando de un formato vectorial a tipo .png por la enorme cantidad de puntos que se encuentran representados (ocupa demasiada memoria RAM la visualización en .pdf y se necesita un ordenador muy potente). Si se desean visualizar con mayor calidad hay que ir al directorio *./figure* para encontrar la versión en *HD*, en la que se ha aumentado considerablemente el DPI.
+
+```{r seleccion_una_variable, echo = FALSE, include = TRUE, fig.width = 6, fig.height = 3, fig.align = "center", fig.cap = "Outliers para la variable EDAD por diferentes métodos.\\label{fig:seleccion_una_variable}", fig.pos = "H", fig.format = "png"}
+z <- "EDAD"
+
+df_var <- df_sum_outliers %>%
+  select(all_of(z), starts_with(paste0(z, "_Outliers"))) %>%
+  rename_at(vars(starts_with(paste0(z, "_Outliers"))), ~str_remove(., paste0(z, "_Outliers_"))) %>%
+  pivot_longer(cols = -all_of(z), names_to = "Method", values_to = "Outlier_Status")
+
+outlier_plot <- ggplot(df_var, aes(x = Method, y = get(z), color = Outlier_Status)) +
+  geom_point(size = 0.4) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "blue")) +
+  labs(
+    title = paste("Distribución de", z, "con Detección de Outliers"),
+    x = "Método de Detección de Outliers",
+    y = z,
+    color = "Outlier"
+  )
+
+ggsave("./figure/outlier_plot_HD.png", plot = outlier_plot, width = 6, height = 3, dpi = 300)
+
+ggsave("./figure/outlier_plot.png", plot = outlier_plot, width = 5, height = 3, dpi = 80) # para que quepa en los márgenes...
+knitr::include_graphics("./figure/outlier_plot.png")
+```
+
+En la Figura \ref{fig:seleccion_una_variable} podemos apreciar que los 3 primeros métodos (3$\sigma$, Boxplot, Hampel) han resultado muy permisivos con los outliers, mientras que el de percentiles ha eliminado bastantes valores, fruto de que el umbral superior de aceptación de no ser outlier era 83 años, como se observa en la Tabla \ref{tab:tabla_outliers_edad}.
+
+
+```{r outliers_complete, eval = FALSE}
+# Lo dejo en eval = FALSE porque ocupa una cantidad de RAM desproporcionada tener esto:
+
+df_sum_outliers_long <- df_sum_outliers %>%
+  pivot_longer(cols = contains("Outliers"), 
+               names_to = "Method", 
+               values_to = "Outlier_Status") %>%
+  mutate(Outlier_Status = as.logical(Outlier_Status))  # Convierte TRUE/FALSE a lógico
+
+print(df_sum_outliers_long)
+```
+
+Analizando nuestro conjunto de datos, hemos llegado a la conclusión de que los Outliers que aparecen no se deben en ningún caso a datos erróneos. Esto es así porque el INE ha debido de hacer un preprocesado de posibles valores incorrectos con anterioridad. Así pues, consideramos que carece de sentido imputarlos e incluso eliminarlos, ya que pueden resultar de interés en nuestro estudio.
 
 ## Análisis multivariante
 
-Como su nombre indica, la fase de análisis multivariante, consiste en la búsqueda de relación entre dos variables. Para ello existen diferentes formas de representación, en función del tipo de variables que se esté tratando tratando.
+Como su nombre indica, la fase de análisis multivariante, consiste en la búsqueda de relación entre dos variables o más. Para ello existen diferentes formas de representación, en función del tipo de variables que se esté tratando tratando.
 
 ### Gráficos
 
-#### Analisis entre variables numericas
+#### Análisis entre variables numéricas
 
 Mediante la realización del siguiente gráfico se ha tratado de representar la relación existente entre las variables: edad (EDAD), número de hijos (NHIJOS) y grado de satisfacción con el tiempo de desplazamiento al trabajo (SATISTIEMP).
 
-```{r graf_dispersion, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Diagrama de dispersión para representar la relación entre EDAD, NHIJOS y SATISTIEMP", fig.pos = "H"}
+```{r grupos_edad}
+rangos_edades <- c(16, 26, 36, 46, 56, 66, 76, 86, 96, 106, 116)
+puntos_medios <- c(21, 31, 41, 51, 61, 71, 81, 91, 101, 111, 121)
+
+df_test <- df %>%
+  mutate(grupo_edades = cut(EDAD, breaks = rangos_edades, labels = c("16-26", "27-36", "37-46", "47-56", "57-66", "67-76", "77-86", "87-96", "97-106", "107-116"), na.rm = TRUE)) %>%
+  group_by(grupo_edades) %>%
+  summarise(MediaHijos = mean(NHIJOS, na.rm = TRUE)) %>%
+  mutate(punto_medio = puntos_medios)
+
+df_test <- na.omit(df_test)
+head(df_test, 10)
+```
+
+
+```{r graf_dispersion, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Diagrama de dispersión para representar la relación entre EDAD, NHIJOS y SATISTIEMP \\label{fig:graf_dispersion}", fig.pos = "H"}
 # Para una visualización sin na que no permiten visualizar los datos antes del tratamiento de
 # valores faltantes, se incluye lo siguiente
 
 df_sin_na <- df[complete.cases(df$EDAD, df$NHIJOS, df$SATISTIEMP), ]
 
 
-
-ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SATISTIEMP)) +
+graf_dispersion <- ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SATISTIEMP)) +
   geom_jitter(data = subset(df, is.na(SATISTIEMP)),
               aes(x = EDAD, y = NHIJOS),
               color = "lightgreen",  # Color para los valores faltantes
               size = 2, alpha = 0.05) +
   geom_jitter(size = 2, alpha = 0.5) +
   scale_color_gradient(low = "darkorchid4", high = "yellow") +
-  labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad", y = "Nº hijos")
+  labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad / años", y = "Nº hijos") + 
+  geom_line(data = df_test, aes(x = punto_medio, y = MediaHijos), color = "red", size = 1, show.legend = TRUE)
+
+ggsave("./figure/graf_dispersion_HD.png", plot = graf_dispersion, width = 6, height = 3, dpi = 300)
+
+ggsave("./figure/graf_dispersion.png", plot = graf_dispersion, width = 5, height = 3, dpi = 80) # para que quepa en los márgenes...
+knitr::include_graphics("./figure/graf_dispersion.png")
 
 ```
-El tipo de gráfico empleado se conoce como gráfico de dispersión. Como se puede observar en él, a medida que va aumentando la edad de las personas hasta los 40 años, también va aumentando en número de hijos. 
 
-#### Analisis entre variables numericas y categóricas
+Este gráfico corresponde a uno de dispersión con puntos "jittered" o dispersos, lo que resulta útil dada la enorme superposición de puntos presentes. La línea roja se ha hecho a partir de las medias en el número de hijos para los intervalos "16-26", "27-36", "37-46", "47-56", "57-66", "67-76", "77-86", "87-96", "97-106", "107-116", cogiendo el punto medio en cada caso. Es evidente notar que hay una tendencia creciente en que el número de hijos sea mayor conforme la edad es mayor. Esto es lo que uno esperaría, ya que antiguamente en España se solían tener mayor cantidad de hijos. Vemos además que los **NA** para la variable SATISTIEMP (satisfacción por desplazamiento a estudio/trabajo) [color verde] está muy concentrada en edades avanzadas, resultado de que la mayoría de gente está jubilada.
 
-En primer lugar, se ha realizado una representación de la edad de las personas en función de su sexo. Para esta representación, se ha generado un gráfico con dos histogramas. El de color azul para representar la edad de los hombres y el rojo para representar la edad de las mujeres.
 
-```{r edad_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Histograma de la variable EDAD en función de la variable SEXO", fig.pos = "H"}
-p_edad <- ggplot(df, aes(x = EDAD, color = SEXO)) +
-  geom_freqpoly(binwidth = 1) +
-  labs(
-    title = "Distribución de edades en la encuesta",
-    x = "Edad / años",
-    y = "Frecuencia"
-  ) +
-  scale_color_manual(values = c("Hombre" = "blue", "Mujer" = "red")) +
-  theme_minimal() +
-  scale_x_continuous(breaks = seq(15, 120, by = 10))
+#### Análisis entre variables numéricas y categóricas
 
-p_edad
+A partir del siguiente curioso gráfico podemos hacer una representación de este tipo. En este caso, relacionaremos la variable *SATISTIEMP* (Satisfacción en el tiempo al trabajo / estudio) junto con la variable categórica de provincia (*IDQ_PV*). Para poder tener algo de interacción se recomienda correr el código en .Rmd. 
+
+```{r mapa_satisfaccion, eval = FALSE}
+
+# Calcular el número medio de NHIJOS en cada provincia
+mean_satis <- df %>%
+  group_by(IDQ_PV) %>%
+  summarise(Mean_satistiemp = mean(SATISTIEMP, na.rm = TRUE))
+
+# Obtener las coordenadas de las capitales de provincia (previamente se ha usado una consulta a googleMaps con la API)
+load("./data/capital_locations.RData")
+load("./data/center_location.RData")
+
+capital_locations <- capital_locations %>%
+  mutate(IDQ_PV = unique(df$IDQ_PV))
+
+# Unir los datos de la media de NHIJOS con las coordenadas de las capitales
+capital_data <- merge(mean_satis, capital_locations, by = "IDQ_PV")
+capital_data$IDQ_PV <- paste(capital_data$IDQ_PV, "España")
+
+# Más colores
+n_colors <- 52
+colors <- diverging_hcl(n = n_colors, h = c(0, 255))
+breaks <- seq(min(capital_data$Mean_satistiemp), max(capital_data$Mean_satistiemp), length.out = 5)
+selected_colors <- colorRampPalette(colors)(5)
+
+mymap <- leaflet() %>%
+  addTiles(urlTemplate = 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png') %>%
+  setView(location$lon, location$lat, zoom = 6) %>%
+  addCircleMarkers(
+    data = capital_data,
+    radius = sqrt(capital_data$Mean_satistiemp) * 3, 
+    fillOpacity = 1, 
+    color = ~colorNumeric(colors, domain = NULL)(capital_data$Mean_satistiemp),
+    label = ~paste(IDQ_PV),
+    popup = ~paste("Media: ", Mean_satistiemp),
+    group = "Satisfaccion"
+  ) %>%
+  addLegend("bottomright", 
+    colors = selected_colors,
+    labels = round(breaks, 1),
+    title = "Media de SATISTIEMP",
+    group = "Satisfaccion") %>%
+  addScaleBar(
+    position = "bottomleft") %>%
+  addLayersControl(
+    overlayGroups = c("Satisfaccion")
+  )
+
+mymap
 ```
 
-Obtervando el gráfico obtenido, se puede ver como en el dataset y más mujeres que hombres a las que se ha realizado la encuesta para casi todas las edades excepto para las personas cuya edad va desde los 16 a los 30 años.
+A la vista del mapa, es claro apreciar que la media de satisfacción desplazamiento en la provincia de Madrid es algo inferior al resto de sitios, seguida por la de Barcelona.
 
-  <!-- En numérica categórica también iría el mapa -->
   
-Por último, se ha tratado de crear un gráfico para relacionar las variables: edad (EDAD), grado de participación en las tareas domésticas (TDOMEST) y estado civil (EC). Para ello, se ha empleado un gráfico de dispersión en el que el eje de abscisas representa la variable TDOMEST, el eje de ordenadas representa la variable EDAD y el color de cada uno de los puntos representa la variable EC.
-  
-```{r edad_by_tdomest_by_ec, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
-ggplot(df, aes(x = TDOMEST, y = EDAD, colour = EC)) + geom_point(size = 0.25) + geom_jitter() + theme_minimal() + scale_x_discrete(labels = c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")) + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-Analizando el gráfico obtenido, se observa como los jovenes solteros y los viudos son los que menos tareas realizan. También se aprecia como las personas divorciadas destacan entre los que realizan todas las tareas del hogar.
-
 #### Analisis entre variables categóricas.
 
 Por último, también es posible representar la relación entre varias variables categóricas. Para ello, lo más común es emplear el gráficos de barras o mosaicos. En la siguiente representación se ha expresado la relación entre la el campo de los estudios (CAMPO) con el sexo de las personas (SEXO).
-```{r campo_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
+
+```{r campo_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo\\label{fig:campo_by_sexo}", fig.pos = "H"}
 df_plot <- df
 #levels(df_plot$CAMPO)
 
@@ -638,26 +905,34 @@ etiquetas <- c( "Educ.","Artes","CC.SS","Negocios","Ciencias","Tec.",
 
 ggplot(na.omit(df_plot), aes(x = CAMPO, fill = SEXO)) +
   geom_bar(position = "dodge", stat = "count") +
-  labs(title = "Gráfico del campo de estudio por sexo", x = "Campo", y = "Frecuencia") +
+  labs(title = "Gráfico del campo de estudio por sexo", x = "Campo de estudio", y = "Frecuencia") +
   scale_fill_manual(values = c("Hombre" = "blue", "Mujer" = "pink"), na.value = "grey") +
   guides(fill = guide_legend(title = "Sexo"))+
   scale_x_discrete(labels = etiquetas) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-Como se puede apreciar en el gráfico de barras anterior, hay campos de estudio en los que predominan los hombres frente a las mujeres, como es en el caso de las Arquitecturas. En otros campos pasa lo contrario, predominan las mujeres, como en el caso de la salud o la educación. 
+
+Como se puede apreciar en el gráfico de barras anterior, hay campos de estudio en los que predominan los hombres frente a las mujeres, como es en el caso de las Arquitecturas. En otros campos pasa lo contrario, como en el caso de la salud o la educación. 
 
   
-```{r mosaico, echo = FALSE, include = TRUE, fig.width = 7, fig.height = 5, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo", fig.pos = "H"}
-library(ggmosaic)
-df_aux <- df[, c("SITLAB", "TDOMEST", "HIJOS")]
+```{r mosaico, echo = FALSE, include = TRUE, fig.width = 6, fig.height = 5, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo\\label{fig:mosaico}", fig.pos = "H"}
+
+df_aux <- df %>%
+  select(SITLAB, TDOMEST, HIJOS)
+
 levels(df_aux$TDOMEST) <- c("Todas las tareas", "La mitad de las tareas", "Pocas tareas", "Ninguna tarea")
+levels(df_aux$SITLAB) <- c("Jornada completa", "Pre/Jubilado/a", "Parado/a (Extrabajador/a)", "Estudiante", "Tareas del hogar", "Jornada parcial", "Incapacitado/a", "Otra inactividad", "Parado/a (No ha trabajado)")
+                           
 ggplot(data = df_aux) +
-  geom_mosaic(aes(x = product(SITLAB, TDOMEST), fill = HIJOS)) + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_mosaic(aes(x = product(SITLAB, TDOMEST), fill = HIJOS), offset = 0.03) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Tareas domésticas", y = "Situación laboral")
 
 ```
-Como se puede apreciar en el gráfico de barras anterior, hay campos de estudio en los que predominan los hombres frente a las mujeres, como es en el caso de las Arquitecturas. En otros campos pasa lo contrario, predominan las mujeres, como en el caso de la salud o la educación. 
+
+Un gráfico de mosaico es una herramienta de visualización muy poderosa. Podemos visualizar 3 variables de manera simultánea en la Figura \ref{fig:mosaico}. Pueden apreciarse algunos comportamientos esperados, como que las personas que tienen
+
 
 ### Caracterización
 
@@ -711,103 +986,21 @@ theme(
   legend.direction = "vertical")+
   guides(fill = guide_colorbar(barwidth = 1, barheight = 7,
                 title.position = "top", title.hjust = 0.5))
-
 ```
+
 Analizando los resultados obtenidos, sólo se puede apreciar una dependencia entre los de variables EDAD y ANOESTUD, y, ANOESTUD y EDADESTUD. Entre el resto de variables numéricas no existe una dependencia.
 
-<!-- Tabla crosstable -->
+
 
 ### Resto de cosas hechas
 
 
-
-https://ggplot2.tidyverse.org/reference/geom_qq.html
-
-```{r numhijos_by_nacionalidad_separado}
-df_espana <- df %>%
-  filter(NACIM == "España") %>%
-  group_by(NHIJOS) %>%
-  summarize(RelativeFrequency = n() / nrow(.))
-
-df_otro_pais <- df %>%
-  filter(NACIM == "Otro país") %>%
-  group_by(NHIJOS) %>%
-  summarize(RelativeFrequency = n() / nrow(.))
-
-y_limits <- range(0, max(max(df_espana$RelativeFrequency), max(df_otro_pais$RelativeFrequency)))
-
-p_numhijos_espana <- ggplot(df_espana, aes(x = NHIJOS, y = RelativeFrequency)) +
-  geom_bar(stat = "identity", fill = "blue") +
-  labs(
-    title = "Número de hijos (España)",
-    x = "Número de Hijos",
-    y = "Frecuencia Relativa"
-  ) +
-  coord_cartesian(ylim = y_limits) +  
-  theme_minimal()
-
-p_numhijos_otro_pais <- ggplot(df_otro_pais, aes(x = NHIJOS, y = RelativeFrequency)) +
-  geom_bar(stat = "identity", fill = "red") +
-  labs(
-    title = "Número de hijos (Otro país)",
-    x = "Número de Hijos",
-    y = "Frecuencia Relativa"
-  ) +
-  coord_cartesian(ylim = y_limits) +  
-  theme_minimal()
-
-
-grid.arrange(p_numhijos_espana, p_numhijos_otro_pais, ncol = 2)
-
-```
-
-```{r numhijos_by_nacionalidad_junto}
-# Cálculo de frecuencias relativas para cada grupo
-
-df_grouped <- df %>%
-  group_by(NACIM, NHIJOS) %>%
-  summarize(RelativeFrequency = n() / nrow(df[df$NACIM == NACIM, ]))
-
-# Gráfico conjunto
-
-p_numhijos_merged <- ggplot(df_grouped, aes(x = NHIJOS, y = RelativeFrequency, fill = NACIM)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(
-    title = "Distribución del número de hijos por nacionalidad",
-    x = "Número de Hijos",
-    y = "Frecuencia Relativa"
-  ) +
-  scale_fill_manual(values = c("España" = "blue", "Otro país" = "red")) +
-  theme_minimal()
-
-p_numhijos_merged
-```
-
-```{r numhijos_by_nacionalidad_boxplot}
-p_boxplot_nacim <- ggplot(df, aes(x = NACIM, y = NHIJOS, fill = NACIM)) +
-  geom_boxplot(coef = 1.5, outlier.colour = "orange") +
-  labs(
-    title = "Número de hijos por nacionalidad",
-    x = "Nacionalidad",
-    y = "Número de hijos"
-  ) +
-  scale_fill_manual(values = c("España" = "blue", "Otro país" = "red")) +
-  theme_minimal()
-
-p_boxplot_nacim
-```
-
-Podemos observar que hay múltiples outliers, como consecuencia de que la inmensa mayoría de la gente suele estar dentro del rango intercuartílico para el número de hijos, siendo muy raro tener 6 hijos o más. Un tratamiento más riguroso para detectar las anomalías se realizará posteriormente.
-
-
 ## Busqueda de outliers multivariante
+
 Se implementan algoritmos de clustering(kmeans) para detectar instancias atipicas dentro del conjunto de datos
 
-
-
-
-
 Para variables numericas los outliers se obtienen de la siguiente forma:
+
 ```{r eval = FALSE}
 # Se crea una copia del df donde se seleccionan las columnas deseadas
 df_cl <- df[,c("EDAD","SATISTIEMP","ANOESTUD")]
@@ -840,8 +1033,8 @@ df_cl<- df_cl %>%
 ggplot(df_cl,aes(x=EDAD, y=SATISTIEMP, alpha=0.5,color=clust)) +
   geom_jitter() +
   labs(title = "Gráfico de Clustering",
-       x="Variable X",
-       y="Variable Y",
+       x="EDAD",
+       y="SATISTIEMP",
        color="Cluster")
 
 #Se filtran a partir de una distancia que debe ser definida, que permita obtener un numero
@@ -854,14 +1047,14 @@ df_cl<- df_cl %>%
 ggplot(df_cl, aes(x=EDAD,y=SATISTIEMP,alpha=ANOESTUD,color=clust)) +
   geom_jitter() +
   labs(title = "Valores atipicos detectados",x = "Edad",
-       y="Satisfaccion compras online",
+       y="Satisfacción desplazamiento",
        alpha="Año estudio",color="Cluster")+
   theme_classic()
 
 ```
 
 
-Para categoricas el estudio es el sigueinte:
+Para categoricas el estudio es el siguiente:
 
 ```{r eval = FALSE}
 # Se genera un df donde realizar los cambios
@@ -888,7 +1081,7 @@ distancias <- sapply(1:nrow(df_copia),function(x){
 })
 
 # Se añaden las distancias al df inicial
-df_copia<- df_copia %>%
+df_copia<- df_copia %>% 
   mutate(dist=(distancias),clust=as.factor(clusters$cluster))
 
 #Es necesario encontrar una combinacion de numero de clusters y de d que permita obtener una cantidad de instancias reducidas que puedan considerarse
@@ -896,12 +1089,12 @@ df_copia<- df_copia %>%
 # Se busca una distancia d que al hacer sum(distancias>d) sea un valor bajo, que indica el numero de outliers 
 
 #Se filtra y se obtienen solo los outliers
-#df_extremo<- df_copia %>%
-  #filter(dist>_d_)
+df_extremo<- df_copia %>%
+  filter(dist>_d_)
 
 
 #Se visualizan solo los outliers, se podia usar otra funcion en lugar de head
-#head(df_extremo)
+head(df_extremo)
 
 
 ```
