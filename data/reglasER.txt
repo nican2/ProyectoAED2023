@@ -6,6 +6,7 @@
  SATISTIEMP <= 10
  NHIJOS >= 0
  EDADEC >= 0
+ EDADEC <= 130
 
 # categorical rules
  SEXO %in% c("Mujer","Hombre")
