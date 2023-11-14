@@ -140,6 +140,7 @@ Tablas3 <- read_excel(ruta_excel, sheet = "Tablas3", range = "A4:C48", col_names
 ```
 
 $\\$
+
 A pesar de que resultó de gran utilidad el fichero que ofrecía INE para la transformación de las variables a un tipo correspondiente, surgieron algunos fallos que se debieron solventar de manera manual. Determinadas variables no fueron adecuadamente codificadas por parte del INE, de tal forma que fue necesario modificar ligeramente el fichero *.xlsx*. Concretamente, algunos diccionarios de variables en los que no terminaba de estar correctamente determinado el código (lo que sería el level en un factor). El problema presentado (en algunas variables) consistía, básicamente, en que aparecía "01" en lugar de "1", valor recogido en las observaciones del dataset.
 
 ```{r conversion_dataset}
@@ -197,6 +198,7 @@ for (i in seq_along(dic_vars)) {
 ```
 
 $\\$
+
 Una vez hecha la conversión del dataset que contaba con un mayor número de variables se decidió que era de especial interés hacer una unión con el otro dataset mencionado al inicio, con el fin de obtener variables interesantes como  `SEXO` o `EDAD`.
 
 ```{r seleccion_columnas}
@@ -240,6 +242,7 @@ dplyr::glimpse(df_merged, width = 60)
 ```
 
 $\\$
+
 En resumen, nuestro dataset cuenta con `r nrow(df_merged)` observaciones y con `r ncol(df_merged)` variables. Muchas de estas variables no nos serán de utilidad para las preguntas que deseamos responder, por lo que convendrá deshacernos de ellas por una cuestión de comodidad y optimización
 en los cálculos. Las variables están explicadas en *dr_ECEPOVadultos_2021.xlsx* y  
 *dr_ECEPOVhogar_2021.xlsx*. Tras un análisis detallado, las variables que nos convienen rescatar son las mostradas en la Tabla \ref{tab:tabla_vars_usadas}.
@@ -392,9 +395,9 @@ if (all(verif_EC, verif_ESTUD, verif_SITLAB, verif_SATISTIEMP, verif_HIJOS)) {
 # Todas se satisfacen. Si sale que no es porque df se ha visto modificado.
 ```
 
-Habiéndose cumplido lo que prometía el INE podemos asegurar que en nuestro conjunto de datos (al menos en nuestras variables seleccionadas de interés) no hay ningún ningún valor que se haya perdido estrictamente. Todos los NA responden a que determinadas variables (presentes en el dataset) toman un valor u otro. $\\$
+Habiéndose cumplido lo que prometía el INE podemos asegurar que en nuestro conjunto de datos (al menos en nuestras variables seleccionadas de interés) no hay ningún ningún valor que se haya perdido estrictamente. Todos los NA responden a que determinadas variables (presentes en el dataset) toman un valor u otro (*missing at random*). $\\$
 
-En nuestro análisis, hemos decidido que los únicos valores NA que pueden cobrar sentido y ser imputados son los de la variable `NHIJOS`, ya que consideramos que con 16 años (edad mínima en nuestro conjunto de datos) este valor no tendría por qué ser siempre 0. Esto permitirá que en las gráficas de NHIJOS el mínimo no sea 1, sino 0. $\\$
+En nuestro análisis, hemos decidido que los únicos valores NA que pueden cobrar sentido y ser imputados son los de la variable `NHIJOS`, ya que consideramos que con 16 años (edad mínima en nuestro conjunto de datos) este valor no tendría por qué ser siempre 0. Esto permitirá que el mínimo de `NHIJOS` sea 0, y no 1. $\\$
 
 ```{r imputacion_NHIJOS}
 # Codificamos los NA de la variable NHIJOS como 0, ya que nos será útil más tarde esta interpretación
@@ -584,7 +587,7 @@ La linea diagonal indica el comportamiento gaussiano ideal.
 
 ### Variables de tipo categórico
 
-A diferencia de las variables numérica, en las variables categóricas no es posible obtener muchos estadísticos. El más común es la moda, que se corresponde con la columna *topCount* de la Tabla \ref{tab:kable_sumario}.
+A diferencia de las variables numérica, en las variables categóricas no es posible obtener muchos estadísticos. El más común es la moda, que se corresponde con la columna *topLevel* de la Tabla \ref{tab:kable_sumario}.
 
 Otra información que se puede analizar en el análisis univariante de una variable categórica es la frecuencia de aparición de cada una de las categorías.
 Se representa esto en la Tabla \ref{tab:tabla_freq}. Es posible también representar esta información visualmente, a través de un gráfico de barras como en la Figura \ref{fig:sitlab_freq}.
@@ -593,9 +596,8 @@ Se representa esto en la Tabla \ref{tab:tabla_freq}. Es posible también represe
 SITLAB_freq <- df %>%
   select(SITLAB) %>%
   group_by(SITLAB) %>%
-  count()
+  summarise(Frecuencia = n())
 ```
-
 
 ```{r tabla_freq, fig.cap = "\\label{tab:tabla_freq}", include = TRUE}
 kable_sumnum <- knitr::kable(SITLAB_freq, format = "latex",
@@ -611,7 +613,7 @@ kable_styling(kable_sumnum, font_size = 8, position = "center", full_width = TRU
 
 ```{r sitlab_bar, echo = FALSE, include = TRUE, fig.align = "center", fig.cap = "Diagrama de barras para la variable SITLAB.\\label{fig:sitlab_freq}", fig.pos = "H", fig.width = 5, fig.height = 3.5}
 
-ggplot(SITLAB_freq, aes(x = reorder(SITLAB, -n), y = n, fill = n)) +
+ggplot(SITLAB_freq, aes(x = reorder(SITLAB, -Frecuencia), y = Frecuencia, fill = Frecuencia)) +
   geom_bar(stat = "identity",
            col = "black") +
   ggtitle("Diagrama de barras de la Situación Laboral") +
@@ -1130,7 +1132,8 @@ resultado_chi_cuadrado <- chisq.test(tabla_contingencia)
 
 ```{r p_value, message = TRUE, include = TRUE}
 if(resultado_chi_cuadrado$p.value < 0.05) {
-  print("Se rechaza la hipótesis nula de independencia entre las variables con un nivel de significancia de 0.05. Hay cierta asociación entre ellas.")
+  cat("Se rechaza la hipótesis nula de independencia entre las variables \n
+con un nivel de significancia de 0.05. Hay cierta asociación entre ellas.")
 }
 ```
 $\\$
@@ -1294,9 +1297,10 @@ kable_res <- knitr::kable(df_knitr, format = "latex",
 kable_styling(kable_res, font_size = 8)
 ```
 
-
 # Conclusión
 
-Por un lado, mediante la realización de este proyecto ha sido posible obtener las respuestas a las diferentes preguntas planteadas al inicio del proyecto. En primer lugar, hemos visto, mediante el análisis univariante, cómo están distribuidas las edades de las personas encuestadas y su situación laboral. En segundo lugar, mediante el análisis multivariante, ha sido posible examinar las relaciones entre diferentes grupos de variables. Se ha analizado la relación entre la edad y el número de hijos. O, entre la edad y su grado de satisfacción con el desplazamiento al trabajo. Incluso, se ha implementado un mapa de España interactivo que permite analizar el grado de satisfacción de las personas en función de su lugar de residencia, donde se ha comprobado que en las dos grandes ciudades del país es donde se encuentran las personas más descontentas con su tiempo de desplazamiento hasta su puesto de trabajo. Para finalizar con el análisis multivariante, se ha generado un diagrama de barras y un mosaico con los que se ha podido entender la relación entre variables no continuas como el sexo y el campo de estudio de las personas o su grado de aportación el las tareas del hogar. Seguidamente, se ha procedido con la caracterización tanto de variables tanto numéricas como categóricas. Donde hemos comprobado que variables contínuas como la edad o el año de finalización de los estudios están linealmente realcionadas. O, que la situación laboral de una persona está muy ligada a su lugar de trabajo. Y, por último, también se han implementado diferentes métodos para detectar los outlier o datos atípicos en variables individuales y, mediante el uso del clustering, en la combinación de varias variables numéricas y en la combinación de variable numéricas y categóricas.
+A modo de conclusión, nos gustaría expresar lo que ha supuesto realizar este trabajo. Haber respondido a las preguntas particulares que teníamos sobre este dataset planteadas al inicio, ya sea el cómo se distribuye una variable numérica como la `EDAD`, una categórica como la situación laboral (`SITLAB`), buscar relaciones entre distintas variables identificando por su tipo (numérico-numérico, categórico-numérico, categórico-categórico) es ciertamente importante. Más aún es el haber podido acceder a métodos más poderosos como el clustering para nuestro análisis. $\\$
 
-Por el otro lado, gracias a la realización de este proyecto ha sido posible poner en práctica todos los conceptos aprendidos en la asignatura de Análisis Exploratorio de Datos del máster en Ciencia de Datos. Hemos podido enfrentarnos a un problema real. Trabajando con un conjunto de datos real. Conyevando esto el enfrentamiento a diferentes fases como han sido: la carga y lectura del dataset, la realización de las modificaciones pertinentes en el dataset para facilitar su manejo y estudio, el análisis de las diferentes variables o la detección de valores atípicos contenidos en dicho dataset.
+Todo ello nos ha aportado un dominio del conocimiento del problema en cuestión en poco tiempo sin necesidad de consagrarnos como expertos en área de estudio. Además, hemos aprendido cómo problemáticas como la falta de datos o los errores de los mismos pueden suponer verdaderos dolores de cabeza en el análisis y exploración de estos. $\\$
+
+Sin embargo, consideramos que lo más fructífero de este asunto es el habernos enfrentado por primera vez a una parte de un problema real en Ciencia de Datos, algo que va más allá de lo que meramente se puede llegar a impartir en clase con ejemplos sencillos. Además, se han debido tomar ciertas decisiones en colectivo, lo que nos ha hecho ganar además competencias relacionadas con el trabajo en equipo, algo que con total seguridad nos será muy útil en el futuro sea donde sea que vayamos a parar.
