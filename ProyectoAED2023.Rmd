@@ -1089,16 +1089,23 @@ Al ser un mapa asimétrico, la forma de interpretar los resultados de la Figura 
 La diagonal del mapa anterior, es decir los valores de K, aportan información acerca del número de valores distintos de cada factor.
 
 
-### Resto de cosas hechas
 
 
-## Busqueda de outliers multivariante
+## Búsqueda de outliers multivariante
+Se hace uso de un algoritmo de clustering para detectar instancias atípicas dentro del conjunto de datos. Este es un algoritmo no supervisado que genera grupos entre las instancias, obteniendo una serie de centroides, pudiendo identificar a una instancia como outlier bien por estar a una distancia elevada de su centroide o bien por el hecho de que conforme un grupo pequeño y aislado del resto.
 
-Se implementan algoritmos de clustering(kmeans) para detectar instancias atipicas dentro del conjunto de datos
 
-Para variables numericas los outliers se obtienen de la siguiente forma:
+Hay que tener en cuenta los siguientes puntos en la aplicación de este algoritmo de ML:
 
-```{r eval = FALSE}
+
+Es sensible a la inicialización: lo que implica que hemos de fijar la semilla generadora de números aleatorios para garantizar la reproducibilidad del cuaderno.
+Se ha de parametrizar el número de núcleos, del que dependen directamente los resultados obtenidos.
+En nuestro problema, realizamos dos aproximaciones, una primera donde solo se capturan subconjuntos de variables numéricas, seguida de otra donde se capturan un subconjunto mayor de variables, tomando variables tanto numéricas como categóricas.
+
+
+###Clustering con atributos numéricos
+Para la primera aproximación, los resultados son los siguientes:
+```{r clustering1,echo=FALSE, include=FALSE}
 # Se crea una copia del df donde se seleccionan las columnas deseadas
 df_cl <- df[,c("EDAD","SATISTIEMP","ANOESTUD")]
 
@@ -1106,7 +1113,7 @@ df_cl <- na.omit(df_cl)
 #Se normalizan para poder usar kmeans
 df_cl_scaled <- scale(df_cl)
 
-#Se defiune un numero de clusters, uqe debera ser ajustado para 
+#Se defiune un numero de clusters, que debera ser ajustado para 
 # caputrar de forma correcta los outliers
 n_clusters <- 20
 clusters <- kmeans(df_cl_scaled, centers = n_clusters)
@@ -1126,13 +1133,6 @@ distancias <- sapply(1:nrow(df_cl),function(x){
 df_cl<- df_cl %>%
   mutate(clust = as.factor(clusters$cluster))
 
-#Se plotea, coloreando en funcion del cluster
-ggplot(df_cl,aes(x=EDAD, y=SATISTIEMP, alpha=0.5,color=clust)) +
-  geom_jitter() +
-  labs(title = "Gráfico de Clustering",
-       x="EDAD",
-       y="SATISTIEMP",
-       color="Cluster")
 
 #Se filtran a partir de una distancia que debe ser definida, que permita obtener un numero
 # de outliers deseados
@@ -1144,54 +1144,84 @@ df_cl<- df_cl %>%
 ggplot(df_cl, aes(x=EDAD,y=SATISTIEMP,alpha=ANOESTUD,color=clust)) +
   geom_jitter() +
   labs(title = "Valores atipicos detectados",x = "Edad",
-       y="Satisfacción desplazamiento",
+       y="Grado de satisfacción",
        alpha="Año estudio",color="Cluster")+
   theme_classic()
 
 ```
 
 
-Para categoricas el estudio es el siguiente:
 
-```{r eval = FALSE}
-# Se genera un df donde realizar los cambios
-df_copia <- na.omit(df[,c("HIJOS","COMPRAINT","TAM_MUNI","EC")])
 
-#Se aplica one hot encoding en este caso en todas las variables
-df_encoded <- data.frame(model.matrix(~ . - 1, data = df_copia))
-#head(df_encoded)
-#colnames(df_encoded)
+Como se observa en el gráfico, en este conjunto de datos aparecen valores bastante peculiares, como el hecho de que existan personas de casi 80 años con estudios recientes. Asimismo, tampoco hay evidencia de que estos datos sean incorrectos, como sucedería si se encontraran con jóvenes con estudios anteriores a sus nacimientos.
+
+### Clustering con variables categóricas y numéricas
+En cuanto al tratamiento con variables categóricas, el tratamiento es parecido, salvo que en esta ocasión es necesario aplicar one-hot encoding a las variables para transformarlas en numéricas, al ser requerido por el algoritmo de clustering.
+
+
+```{r clustering2 ,echo=FALSE, include=FALSE}
+# Se genera un df donde se recogen las variables
+df_copia <- na.omit(df[,c("HIJOS","COMPRAINT","TAM_MUNI","EC","EDAD","SATISTIEMP","ANOESTUD")])
+
+# Por un lado se toman las categoricas
+df_dis <- df_copia[,c("COMPRAINT","HIJOS","TAM_MUNI")]
+
+#Se aplica one hot encoding 
+df_encoded <- data.frame(model.matrix(~ . -1, data = df_dis))
+
+
+# Por otro se toman las discretas
+df_cont <- df_copia[,c("EDAD","SATISTIEMP","ANOESTUD")]
+
+# Se unen los data frame
+df_copia <- cbind(df_encoded,df_cont)
+
 
 # Nota: encontrar el mejor n_clusters que se adapte a los datos
-n_clusters <- 30
+n_clusters <- 27
 
-#Se calcuan los clusters
-clusters <- kmeans(df_encoded, centers = n_clusters)
+# Se fila la semilla para garantizar la reproduicibilidad
+set.seed(123)
+#Se calcuan los clusters mediante kmeans
+clusters <- kmeans(df_copia, centers = n_clusters)
+# Se añaden al df los cluster a los que pertenece cada instancia
 datos_con_clusters <- cbind(df_copia, cluster=as.factor(clusters$cluster))
 
 cluster_ins <- clusters$cluster
 centroides <- clusters$centers
 
-#Se calcula la distancia mediante prograamacion funcional, de mayor rapidez que usando un bucle
+#Se calcula la distancia mediante programacion funcional, de mayor rapidez que usando un bucle
 distancias <- sapply(1:nrow(df_copia),function(x){
-  return(sum(abs(df_encoded[x,]-centroides[cluster_ins[x],])))
+  return(sum(abs(df_copia[x,]-centroides[cluster_ins[x],])))
 })
 
-# Se añaden las distancias al df inicial
-df_copia<- df_copia %>% 
-  mutate(dist=(distancias),clust=as.factor(clusters$cluster))
 
-#Es necesario encontrar una combinacion de numero de clusters y de d que permita obtener una cantidad de instancias reducidas que puedan considerarse
+# Se ordena para buscar los valores mas distintos a su cluter
+df_copia<- df_copia %>%
+  mutate(dist=(distancias),clust=as.factor(clusters$cluster))%>%
+  arrange(desc(dist))
 
-# Se busca una distancia d que al hacer sum(distancias>d) sea un valor bajo, que indica el numero de outliers 
-
-#Se filtra y se obtienen solo los outliers
-df_extremo<- df_copia %>%
-  filter(dist>_d_)
-
-
-#Se visualizan solo los outliers, se podia usar otra funcion en lugar de head
-head(df_extremo)
+# Se muestran los primeros 6 datos atipicos
+df_copia%>%
+  select(-dist)
 
 
 ```
+
+
+Destaca que el algoritmo es capaz de encontrar instancias claramente atípicas, como señores de más de 80 años de edad que puntúen de forma negativa sus desplazamientos al trabajo (lo que implica que siguen trabajando), que realicen compras en internet o que tengan estudios recientes terminados.
+
+
+```{r kable_cl2, include = T}
+kable_res <- knitr::kable(SumarioDatos(data = df_copia), format = "latex",
+             booktabs = TRUE, 
+             caption = "Outliers encontrados en el conjunto de datos", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table", position = "H",
+             tabular.environment = "tabularx")
+
+kable_styling(kable_res, font_size = 5)
+```
+
+
+### Resto de cosas hechas
