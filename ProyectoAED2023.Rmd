@@ -42,10 +42,7 @@ keywords: |
 acknowledgement: |
 
   Es necesario mostrar nuestro agradecimiento a ValgrAI por el apoyo en el pago de la matrícula para el Máster en Ciencia de Datos (UV). Además, no nos podemos olvidar del profesorado que nos permitirá formarnos en este ámbito.
-  
-authorcontributions: |
 
-  Aquí tenemos que poner más o menos lo que ha participado cada uno.
 abbreviations:
   - short: AED
     long: Análisis Exploratorio de Datos
@@ -78,7 +75,7 @@ Primeramente, se cargan todas las librerías necesarias en las diferentes fases 
 ```{r librerias, message = F, include = T, echo = F}
 # Carga de librerías necesarias con pacman
 library(pacman)
-pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2, editrules, mice, colorspace, leaflet, ggmap, ggmosaic, magick, GGally)
+pacman::p_load(readr, stringr, tidyr, dplyr, readxl, ggplot2, forcats, haven, kableExtra, VIM, e1071, ggstatsplot, gridExtra, reshape2, editrules, mice, colorspace, leaflet, ggmap, ggmosaic, magick, GGally, vcd, GoodmanKruskal)
 ```
 
 A continuación, se realiza la carga del conjunto de datos, presente tanto en *.txt* como *.csv* en la carpeta *./data* incluida en el repositorio del proyecto. Asimismo, se carga el fichero *.xlsx* que nos muestra el diseño de registro y valores válidos de las variables. Este fichero será especialmente útil, puesto que permitirá una automatización para convertir el conjunto de datos, que actualmente se encuentra en estado *Raw data* a *Technically correct data*, teniendo cada variable su tipo correspondiente.
@@ -555,7 +552,7 @@ qqplot_edad <- ggplot(df, aes(sample = EDAD)) +
   ylab("Edad / años") + 
   theme_minimal()
 
-ggsave("./figure/qqplot_edad_HD.png", plot = qqplot_edad, width = 4, height = 3, dpi = 300)
+ggsave("./figure/qqplot_edad_HD.jpg", plot = qqplot_edad, width = 4, height = 3, dpi = 300)
 
 ggsave("./figure/qqplot_edad.png", plot = qqplot_edad, width = 3.5, height = 2, dpi = 80) # para que quepa en los márgenes...
 knitr::include_graphics("./figure/qqplot_edad.png")
@@ -836,6 +833,7 @@ graf_dispersion <- ggplot(data = df_sin_na, aes(x = EDAD, y = NHIJOS, color = SA
               aes(x = EDAD, y = NHIJOS),
               color = "lightgreen",  # Color para los valores faltantes
               size = 0.1, alpha = 0.05) +
+  scale_x_continuous(breaks = seq(15, 120, by = 10)) + 
   geom_jitter(size = 0.1, alpha = 0.5) +
   scale_color_gradient(low = "darkorchid4", high = "yellow") +
   labs(title = "Relación entre edad, nº de hijos y satisfacción", x = "Edad / años", y = "Nº hijos") + 
@@ -845,7 +843,6 @@ ggsave("./figure/graf_dispersion_HD.png", plot = graf_dispersion, width = 6, hei
 
 ggsave("./figure/graf_dispersion.png", plot = graf_dispersion, width = 5, height = 3, dpi = 80) # para que quepa en los márgenes...
 knitr::include_graphics("./figure/graf_dispersion.png")
-
 ```
 
 Este gráfico corresponde a uno de dispersión con puntos "jittered" o dispersos, lo que resulta útil dada la enorme superposición de puntos presentes. La línea roja se ha hecho a partir de las medias en el número de hijos para los intervalos ("16-26", "27-36", "37-46", "47-56", "57-66", "67-76", "77-86", "87-96", "97-106", "107-116"), cogiendo el punto medio en cada caso. Es evidente notar que hay una tendencia creciente en que el número de hijos sea mayor conforme la edad es mayor. Esto es lo que uno esperaría, ya que antiguamente en España se solían tener mayor cantidad de hijos. Vemos además que los NA para la variable `SATISTIEMP` [color verde] está muy concentrada en edades avanzadas, resultado de que la mayoría de gente está jubilada. Los resultados en formato tabla no se muestran en el documento en aras de la brevedad, pero están disponibles en el *.Rmd*, al igual que muchas otras cosas.
@@ -853,7 +850,7 @@ Este gráfico corresponde a uno de dispersión con puntos "jittered" o dispersos
 
 #### Análisis entre variables numéricas y categóricas
 
-A partir de la Figura \ref{mapa_satistiemp} podemos hacer una representación de este tipo. En este caso, relacionaremos la variable `SATISTIEMP` (Satisfacción en el tiempo al trabajo / estudio) junto con la variable categórica de provincia (`IDQ_PV`). Para poder tener algo de interacción se recomienda correr el código en .Rmd. 
+A partir de la Figura \ref{fig:mapa_satistiemp} podemos hacer una representación de este tipo. En este caso, relacionaremos la variable `SATISTIEMP` (Satisfacción en el tiempo al trabajo / estudio) junto con la variable categórica de provincia (`IDQ_PV`). Para poder tener algo de interacción se recomienda correr el código en .Rmd. 
 
 ```{r mapa_satisfaccion, eval = FALSE}
 
@@ -917,9 +914,9 @@ A la vista del mapa, es claro apreciar que la media de satisfacción desplazamie
   
 #### Analisis entre variables categóricas.
 
-Por último, también es posible representar la relación entre varias variables categóricas. Para ello, lo más común es emplear el gráficos de barras o mosaicos. En la siguiente representación (Figura \ref{fig:campo_by_sexo}) se ha expresado la relación entre la el campo de los estudios (`CAMPO`) con el sexo de las personas (`SEXO`).
+Es también es posible representar la relación entre varias variables categóricas. Para ello, lo más común es emplear el gráficos de barras o mosaicos. En la siguiente representación (Figura \ref{fig:campo_by_sexo}) se ha expresado la relación entre la el campo de los estudios (`CAMPO`) con el sexo de las personas (`SEXO`).
 
-```{r campo_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estuido en función del sexo\\label{fig:campo_by_sexo}", fig.pos = "H"}
+```{r campo_by_sexo, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Gráfico de barras del campo de estudio en función del sexo.\\label{fig:campo_by_sexo}", fig.pos = "H"}
 df_plot <- df
 #levels(df_plot$CAMPO)
 
@@ -965,7 +962,7 @@ Otra forma de analizar la relación existente entre variables es mediante el cá
 
 Para el caso de las variables numéricas, una técnica común es la creación de un mapa de correlaciones con todas las variables del dataset. En primer lugar, se ha generado un mapa para poder representar las correlaciones de Pearson. Que se corresponde con el mostrado en la Figura \ref{fig:corr_plot_pearson}.
 
-```{r}
+```{r corr_mat_p}
 # Seleccionamos las variables numéricas del dataframe
 df_numericas <- df %>%
   select_if(is.numeric)
@@ -977,7 +974,7 @@ df_numericas_sin_nas <- na.omit(df_numericas)
 corr_mat_pearson <- round(cor(as.data.frame(df_numericas_sin_nas)), 2)
 ```
 
-```{r}
+```{r triangulo_sup}
 # Triángulo superior
 get_upper_tri <- function(corr_mat){
   corr_mat[lower.tri(corr_mat)]<- NA
@@ -985,7 +982,7 @@ get_upper_tri <- function(corr_mat){
 }
 ```
 
-```{r}
+```{r melt_tri}
 upper_tri_pearson <- get_upper_tri(corr_mat_pearson)
 melted_upper_tri_pearson <- melt(upper_tri_pearson, na.rm = TRUE)
 ```
@@ -1015,24 +1012,46 @@ theme(
                 title.position = "top", title.hjust = 0.5))
 ```
 
-La correlación de Pearson es de gran utilidad para poder determinar la dependencia lineal entre diferentes variables. Alizando los resultados obtenidos, sólo se puede apreciar una dependencia entre los pares de variables EDAD y ANOESTUD, y, ANOESTUD y EDADESTUD. Entre el resto de variables numéricas no existe una dependencia.
+La correlación de Pearson es de gran utilidad para poder determinar la dependencia lineal entre diferentes variables. Analizando los resultados obtenidos, sólo se puede apreciar una dependencia algo significativa entre los pares de variables (`EDAD`, `ANOESTUD`). Esto de cierta manera tiene sentido que estén correlacionadas y además con una dependencia negativa, ya que lógicamente un incremento en tu `EDAD` suele llevar a que acabaras tus estudios máximos años anteriores, siendo además lineal por cuestiones de linealidad temporal. Esta relación puede apreciarse en la Figura \ref{fig:ano_anoestud}. Entre el resto de variables numéricas no existe una dependencia lineal significativa. $\\$
 
-Para evaluar la relación entre variables numéricas es mediante la correlación de Spearman. En este caso, es un estadístico que nos da la relación monótona entre pares de variables, es decir, no mide únicamente la relación lineal entre las variables.
+```{r relacion_edad_ano}
+EDAD_ANOESTUD <- df %>%
+  group_by(EDAD) %>%
+  summarise(
+    MEDIA_ANOESTUD = mean(ANOESTUD, na.rm = TRUE)
+  )
+```
 
-```{r}
+```{r ano_anoestud, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Relación entre la variable EDAD y la media de ANOESTUD.\\label{fig:ano_anoestud}", fig.pos = "H"}
+
+ano_anoestud <- ggplot(EDAD_ANOESTUD, aes(x = EDAD, y = MEDIA_ANOESTUD)) +
+  geom_point(color = "red") +
+  labs(title = "Relación entre la Edad y el año de estudio máximo",
+       x = "Edad / años",
+       y = "Año de estudio máximo (media)") +
+  scale_x_continuous(breaks = seq(15, 120, by = 10))
+
+ano_anoestud
+```
+
+Otra manera de ver una correlación entre variables numéricas lo da el índice de correlación de Spearman. En este caso, este es un estadístico que nos da la relación monótona entre pares de variables, no midiendo únicamente una relación estrictamente lineal.
+
+```{r cor_mat_sp}
 # Obtenemos la matriz de correlación de Spearman
 corr_mat_spearman <- round(cor(as.data.frame(df_numericas_sin_nas), method = "spearman"), 2)
 ```
-```{r}
+
+```{r melt_tri_sp}
 upper_tri_spearman <- get_upper_tri(corr_mat_spearman)
 melted_upper_tri_spearman <- melt(upper_tri_spearman, na.rm = TRUE)
 ```
+
 ```{r corr_plot_spearman, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Mapa de correlaciones de Spearman para las variable numéricas\\label{fig:corr_plot_spearman}", fig.pos = "H"}
 ggplot(data = melted_upper_tri_spearman, aes(Var2, Var1, fill = value))+
  geom_tile(color = "white")+
  scale_fill_gradient2(low = "blue", high = "green", mid = "white", 
    midpoint = 0, limit = c(-1,1), space = "Lab", 
-   name = "Pearson\nCorrelation") +
+   name = "Spearman\nCorrelation") +
   theme_minimal()+ 
  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
     size = 12, hjust = 1))+
@@ -1052,60 +1071,69 @@ theme(
                 title.position = "top", title.hjust = 0.5))
 ```
 
-Como se puede observar, en el gráfico de la Figura \ref{fig:corr_plot_spearman}, no parecen existir relaciones entre variables numéricas desconocidas hasta el momento. Pero es importante comprobar las correlaciones de Spearman ya que puede darse el caso de que variables que no presentan una relación lineal entre si, sí presente una relación no lineal.
+Como se puede observar, en el gráfico de la Figura \ref{fig:corr_plot_spearman}, no parecen existir relaciones entre variables numéricas desconocidas hasta el momento. sin embargo, era capital comprobar las correlaciones de Spearman, ya que puede darse el caso de que variables que no presentan una relación lineal entre sí, sí presentasen una relación no lineal.
+
 
 #### Variables categóricas
 
-En el caso de las variables categóricas, hay diferentes formas de analizar la relación entre las variables. Se pueden estudiar variables a pares mediante la realización del test de chi-cuadrado. En otros casos, también es común el empleo de la V de Cramer, que consite en la raíz cuadrada del valor normalizado del test de chi-cuadrado. Como alternativa a estos estadísticos, se puede emplear la tau de Goodman y Kruskal.
+En el caso de las variables categóricas, hay diferentes formas de analizar la relación entre las variables. Se pueden estudiar variables a pares mediante la realización del test de chi-cuadrado. En otros casos, también es común el empleo de la V de Cramer. Como alternativa a estos estadísticos, se puede emplear la tau de Goodman y Kruskal. $\\$
 
-En el caso de los contrastes de hipótesis (chi-cuadrado o V de Cramer), sirven para evaluar la dependencia o independencia de variables categóricas. Mediante el uso de *assocstats* de la librería *vcd*, con la cual se obtiene el valor de la V de Cramer se ha tratado de analizar la realación entre la variable ESTUDIOS y LUGTRAB.
+Calculamos con el test de chi-cuadrado entre las variables `ESTUDIOS` y `LUGTRAB`, permitiéndonos evaluar la independencia entre estas dos variables categóricas.
 
-```{r v_cramer, include=FALSE, eval=TRUE}
-library(vcd)
-tab <- table(df$ESTUDIOS, df$LUGTRAB)
-assocstats(tab)
+```{r chi_cuadrado}
+tabla_contingencia <- table(df$ESTUDIOS, df$LUGTRAB)
+
+resultado_chi_cuadrado <- chisq.test(tabla_contingencia)
 ```
-Como se puede observar en los resultados obtenidos, el resulado de la V de Cramer para ese par de variables es 0.085. Teniendo una significancia de 0.05, se ha obtenido que 0.085 > 0.05, por lo tanto se aceptaria la hipótesis nula. Es decir, las variables son independientes (H0).
 
+```{r p_value, message = TRUE, include = TRUE}
+if(resultado_chi_cuadrado$p.value < 0.05) {
+  print("Se rechaza la hipótesis nula de independencia entre las variables con un nivel de significancia de 0.05. Hay cierta asociación entre ellas.")
+}
+```
+$\\$
+En el caso de la tau de Goodman y Kruskal, el valor de tau es asimétrico (hecho que no sucede con otros estadísticos como es la correlación), debiéndose esto a que dicho estadístico se basa en la fracción de variabilidad de la categoría y que puede ser explicada por la variable categórica x. Teniendo en cuenta lo anterior, se ha tratado de representar un mapa con este estadístico para las variables categóricas.
 
-En el caso de la tau de Goodman y Kruskal, el valor de tau es asimetético (hecho que no sucede con otros estadísticos como es la correlación) esto es debido a que dicho estadístico se basa en la fracción de variabilidad de la categoría y que puede ser explicada por la variable categórica x. Teniendo en cuenta lo anterior, se ha tratado de representar un mapa con este estadístico para las variables categóricas.
-
-```{r goodman_kruskal, echo = FALSE, include = TRUE, fig.width = 6, fig.height = 5, fig.align = "center", fig.cap = "Mapa de GoodManKruskal para las variables categóricas\\label{fig:goodman_kruskal}", fig.pos = "H"}
-library(GoodmanKruskal)
+```{r goodman_kruskal, echo = FALSE, include = TRUE, fig.width = 5.8, fig.height = 5, fig.align = "center", fig.cap = "Mapa de GoodManKruskal para las variables categóricas\\label{fig:goodman_kruskal}", fig.pos = "H"}
 
 df_cat <- df %>% select(TAM_MUNI, SEXO, EC, ESTUDIOS, CAMPO, SITLAB, LUGTRAB, HIJOS, COMPRAINT, TDOMEST)
 #head(df_cat)
 GKmat<-GKtauDataframe(df_cat)
 plot(GKmat)
 ```
+
 Al ser un mapa asimétrico, la forma de interpretar los resultados de la Figura \ref{fig:goodman_kruskal} es un poco peculiar. Del resultado obenido podemos sacar las siguientes conclusiones:
 
-+ El nivel de estudios de una persona es influyente en el campo de trabajo (0.4). En cambio, el campo de trabajo no es tan influyente en los estudios de una persona (0.22).
++ El nivel de estudios de una persona es algo influyente en el campo de trabajo (0.4). En cambio, el campo de trabajo no es tan influyente en los estudios de una persona (0.22).
 
-+ El estado civil de una persona es muy influyente en si tendrá o no hijos (0.56).
++ El estado civil de una persona es ciertamente influyente en si tendrá o no hijos (0.56).
 
-+ La situación laboral de una persona es influyente en su lugar de trabajo (0.48). En cambio, el lugar de trabajo de una persona, no es tán influyente en su situación laboral.
++ La situación laboral de una persona es algo influyente en su lugar de trabajo (0.48). En cambio, el lugar de trabajo de una persona, no es tan influyente en su situación laboral.
 
 La diagonal del mapa anterior, es decir los valores de K, aportan información acerca del número de valores distintos de cada factor.
 
 
 
-
 ## Búsqueda de outliers multivariante
+
 Se hace uso de un algoritmo de clustering para detectar instancias atípicas dentro del conjunto de datos. Este es un algoritmo no supervisado que genera grupos entre las instancias, obteniendo una serie de centroides, pudiendo identificar a una instancia como outlier bien por estar a una distancia elevada de su centroide o bien por el hecho de que conforme un grupo pequeño y aislado del resto.
 
 
 Hay que tener en cuenta los siguientes puntos en la aplicación de este algoritmo de ML:
 
 
-Es sensible a la inicialización: lo que implica que hemos de fijar la semilla generadora de números aleatorios para garantizar la reproducibilidad del cuaderno.
-Se ha de parametrizar el número de núcleos, del que dependen directamente los resultados obtenidos.
+- Es sensible a la inicialización: lo que implica que hemos de fijar la semilla generadora de números aleatorios para garantizar la reproducibilidad del cuaderno.
+
+- Se ha de parametrizar el número de núcleos, del que dependen directamente los resultados obtenidos.
+
 En nuestro problema, realizamos dos aproximaciones, una primera donde solo se capturan subconjuntos de variables numéricas, seguida de otra donde se capturan un subconjunto mayor de variables, tomando variables tanto numéricas como categóricas.
 
 
-###Clustering con atributos numéricos
-Para la primera aproximación, los resultados son los siguientes:
-```{r clustering1,echo=FALSE, include=FALSE}
+### Clustering con atributos numéricos
+
+Para la primera aproximación, los resultados se muestran en la Figura \ref{fig:clustering_num}. Seleccionaremos las variables numéricas `EDAD`, `SATISTIEMP` y `ANOESTUD`.
+
+```{r clustering1}
 # Se crea una copia del df donde se seleccionan las columnas deseadas
 df_cl <- df[,c("EDAD","SATISTIEMP","ANOESTUD")]
 
@@ -1113,8 +1141,7 @@ df_cl <- na.omit(df_cl)
 #Se normalizan para poder usar kmeans
 df_cl_scaled <- scale(df_cl)
 
-#Se defiune un numero de clusters, que debera ser ajustado para 
-# caputrar de forma correcta los outliers
+# Se define un numero de clusters, que debera ser ajustado para caputrar de forma correcta los outliers
 n_clusters <- 20
 clusters <- kmeans(df_cl_scaled, centers = n_clusters)
 
@@ -1139,27 +1166,27 @@ df_cl<- df_cl %>%
 df_cl<- df_cl %>%
   mutate(dist=(distancias>1.5),clust = as.factor(clusters$cluster))%>%
   filter(dist==T)
+```
 
+```{r clustering_num, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 4, fig.align = "center", fig.cap = "Clustering en variables numéricas de EDAD, SATISTIEMP y ANOESTUD.\\label{fig:clustering_num}", fig.pos = "H"}
 # Se plotean los solo los considerados como outliers
-ggplot(df_cl, aes(x=EDAD,y=SATISTIEMP,alpha=ANOESTUD,color=clust)) +
+ggplot(df_cl, aes(x = EDAD, y = SATISTIEMP, alpha = ANOESTUD, color = clust)) +
   geom_jitter() +
-  labs(title = "Valores atipicos detectados",x = "Edad",
+  labs(title = "Valores atípicos detectados", x = "Edad / años",
        y="Grado de satisfacción",
        alpha="Año estudio",color="Cluster")+
   theme_classic()
-
 ```
-
-
-
 
 Como se observa en el gráfico, en este conjunto de datos aparecen valores bastante peculiares, como el hecho de que existan personas de casi 80 años con estudios recientes. Asimismo, tampoco hay evidencia de que estos datos sean incorrectos, como sucedería si se encontraran con jóvenes con estudios anteriores a sus nacimientos.
 
 ### Clustering con variables categóricas y numéricas
-En cuanto al tratamiento con variables categóricas, el tratamiento es parecido, salvo que en esta ocasión es necesario aplicar one-hot encoding a las variables para transformarlas en numéricas, al ser requerido por el algoritmo de clustering.
+
+En cuanto al tratamiento con variables categóricas, este es similar. En esta ocasión es necesario aplicar One-Hot Encoding a las variables para transformarlas en numéricas, al ser requerido por el algoritmo de clustering.
 
 
-```{r clustering2 ,echo=FALSE, include=FALSE}
+```{r clustering2}
+
 # Se genera un df donde se recogen las variables
 df_copia <- na.omit(df[,c("HIJOS","COMPRAINT","TAM_MUNI","EC","EDAD","SATISTIEMP","ANOESTUD")])
 
@@ -1198,30 +1225,32 @@ distancias <- sapply(1:nrow(df_copia),function(x){
 
 # Se ordena para buscar los valores mas distintos a su cluter
 df_copia<- df_copia %>%
-  mutate(dist=(distancias),clust=as.factor(clusters$cluster))%>%
+  mutate(dist=(distancias), clust=as.factor(clusters$cluster))%>%
   arrange(desc(dist))
+```
 
+```{r datos_atipicos_clust_cat}
 # Se muestran los primeros 6 datos atipicos
-df_copia%>%
-  select(-dist)
+df_knitr <- df_copia%>%
+  select(-dist, -TAM_MUNIDe.50.001.a.100.000.habitantes, -TAM_MUNIDe.100.001.a.500.000.habitantes, -TAM_MUNIMás.de.500.000.habitantes) %>%
+  head()
 
-
+df_knitr
 ```
 
 
 Destaca que el algoritmo es capaz de encontrar instancias claramente atípicas, como señores de más de 80 años de edad que puntúen de forma negativa sus desplazamientos al trabajo (lo que implica que siguen trabajando), que realicen compras en internet o que tengan estudios recientes terminados.
 
 
-```{r kable_cl2, include = T}
-kable_res <- knitr::kable(SumarioDatos(data = df_copia), format = "latex",
+```{r kable_cl2, include = TRUE, fig.cap = "\\label{tab:kable_cl2}"}
+kable_res <- knitr::kable(df_knitr, format = "latex",
              booktabs = TRUE, 
              caption = "Outliers encontrados en el conjunto de datos", 
              align = 'ccc', centering = FALSE,
              table.envir = "table", position = "H",
              tabular.environment = "tabularx")
 
-kable_styling(kable_res, font_size = 5)
+kable_styling(kable_res, font_size = 8)
 ```
 
-
-### Resto de cosas hechas
+# Conclusiones
