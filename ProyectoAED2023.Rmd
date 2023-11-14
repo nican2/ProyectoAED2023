@@ -476,7 +476,19 @@ Una vez hemos asegurado que nuestros datos estén en la estructura de data.frame
 
 - ¿Existirá una diferencia relevante entre la satisfacción de desplazamiento y la provincia de la que es el encuestado? ¿Serán los lugareños de Madrid y Barcelona los más desquiciados en este aspecto?
 
-- ¿
+- ¿Será posible ver una distinción entre campos de estudio según el sexo del encuestado? ¿Será cierto que los hombres tienden a ir a ramas más relacionadas con la Arquitectura y Construcción, mientras que las mujeres más a aspectos sociosanitarios?
+
+- ¿Habrá una cierta tendencia a colaborar en las tareas domésticas o no según la situación laboral del encuestado? ¿Dependerá de haber tenido hijos?
+
+- ¿Qué variables numéricas de nuestro conjunto de datos tendrán cierta correlación, ya sea lineal o no lineal? 
+
+- ¿Qué concordancia existirán entre las variables categóricas de nuestro estudio? ¿Existirá entre el estado civil y tener o no hijos?
+
+- ¿Podremos ir más allá y tratar de implementar un algoritmo de clustering con el objetivo de detectar instancias atípicas en nuestro conjunto de datos?
+
+
+Todas estas preguntas se intentarán responder en el presente documento, mostrando representaciones gráficas o por métodos más estadísticos.
+
 
 ## Análisis univariante.
 
@@ -1141,7 +1153,6 @@ Al ser un mapa asimétrico, la forma de interpretar los resultados de la Figura 
 + La situación laboral de una persona es algo influyente en su lugar de trabajo (0.48). En cambio, el lugar de trabajo de una persona, no es tan influyente en su situación laboral.
 
 La diagonal del mapa anterior, es decir los valores de K, aportan información acerca del número de valores distintos de cada factor.
-
 
 
 ## Búsqueda de outliers multivariante
