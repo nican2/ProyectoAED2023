@@ -963,7 +963,7 @@ Otra forma de analizar la relación existente entre variables es mediante el cá
 
 Para el caso de las variables numéricas, una técnica común es la creación de un mapa de correlaciones con todas las variables del dataset. En nuestro caso, se corresponde con el mostrado en la Figura \ref{fig:corr_plot}.
 
-```{r corr_plot}
+```{r df_numericas}
 # Seleccionamos las variables numéricas del dataframe
 df_numericas <- df %>%
   select_if(is.numeric)
@@ -1017,7 +1017,7 @@ Analizando los resultados obtenidos, sólo se puede apreciar una dependencia ent
 
 
 ```{r ggcorr_plot}
-ggpairs(df_numericas_sin_nas)Va
+ggpairs(df_numericas_sin_nas)
 ```
 
 
