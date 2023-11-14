@@ -961,7 +961,9 @@ Un gráfico de mosaico es una herramienta de visualización muy poderosa. Podemo
 
 Otra forma de analizar la relación existente entre variables es mediante el cálculo de estadísticos, como es el caso de las correlaciones o covarianzas para las variables numéricas. $\\$
 
-Para el caso de las variables numéricas, una técnica común es la creación de un mapa de correlaciones con todas las variables del dataset. En nuestro caso, se corresponde con el mostrado en la Figura \ref{fig:corr_plot}.
+#### Variables numéricas
+
+Para el caso de las variables numéricas, una técnica común es la creación de un mapa de correlaciones con todas las variables del dataset. En primer lugar, se ha generado un mapa para poder representar las correlaciones de Pearson. Que se corresponde con el mostrado en la Figura \ref{fig:corr_plot_pearson}.
 
 ```{r}
 # Seleccionamos las variables numéricas del dataframe
@@ -971,8 +973,8 @@ df_numericas <- df %>%
 # Eliminamos las instancias que contengan NAs, ya que esto producirá errores en las correlaciones
 df_numericas_sin_nas <- na.omit(df_numericas)
 
-# Obtenemos la matriz de correlación
-corr_mat <- round(cor(as.data.frame(df_numericas_sin_nas)), 2)
+# Obtenemos la matriz de correlación de Pearson
+corr_mat_pearson <- round(cor(as.data.frame(df_numericas_sin_nas)), 2)
 ```
 
 ```{r}
@@ -984,14 +986,14 @@ get_upper_tri <- function(corr_mat){
 ```
 
 ```{r}
-upper_tri <- get_upper_tri(corr_mat)
-melted_upper_tri <- melt(upper_tri, na.rm = TRUE)
+upper_tri_pearson <- get_upper_tri(corr_mat_pearson)
+melted_upper_tri_pearson <- melt(upper_tri_pearson, na.rm = TRUE)
 ```
 
-```{r corr_plot, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Mapa de correlaciones para las variable numéricas\\label{fig:corr_plot}", fig.pos = "H"}
-ggplot(data = melted_upper_tri, aes(Var2, Var1, fill = value))+
+```{r corr_plot_pearson, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Mapa de correlaciones de Pearson para las variable numéricas\\label{fig:corr_plot_pearson}", fig.pos = "H"}
+ggplot(data = melted_upper_tri_pearson, aes(Var2, Var1, fill = value))+
  geom_tile(color = "white")+
- scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+ scale_fill_gradient2(low = "purple", high = "red", mid = "white", 
    midpoint = 0, limit = c(-1,1), space = "Lab", 
    name = "Pearson\nCorrelation") +
   theme_minimal()+ 
@@ -1013,12 +1015,78 @@ theme(
                 title.position = "top", title.hjust = 0.5))
 ```
 
-Analizando los resultados obtenidos, sólo se puede apreciar una dependencia entre los pares de variables EDAD y ANOESTUD, y, ANOESTUD y EDADESTUD. Entre el resto de variables numéricas no existe una dependencia.
+La correlación de Pearson es de gran utilidad para poder determinar la dependencia lineal entre diferentes variables. Alizando los resultados obtenidos, sólo se puede apreciar una dependencia entre los pares de variables EDAD y ANOESTUD, y, ANOESTUD y EDADESTUD. Entre el resto de variables numéricas no existe una dependencia.
 
+Para evaluar la relación entre variables numéricas es mediante la correlación de Spearman. En este caso, es un estadístico que nos da la relación monótona entre pares de variables, es decir, no mide únicamente la relación lineal entre las variables.
 
-```{r ggcorr_plot, eval=FALSE}
-ggpairs(df_numericas_sin_nas)
+```{r}
+# Obtenemos la matriz de correlación de Spearman
+corr_mat_spearman <- round(cor(as.data.frame(df_numericas_sin_nas), method = "spearman"), 2)
 ```
+```{r}
+upper_tri_spearman <- get_upper_tri(corr_mat_spearman)
+melted_upper_tri_spearman <- melt(upper_tri_spearman, na.rm = TRUE)
+```
+```{r corr_plot_spearman, echo = FALSE, include = TRUE, fig.width = 4, fig.height = 3, fig.align = "center", fig.cap = "Mapa de correlaciones de Spearman para las variable numéricas\\label{fig:corr_plot_spearman}", fig.pos = "H"}
+ggplot(data = melted_upper_tri_spearman, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "green", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name = "Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed() + 
+  geom_text(aes(Var2, Var1, label = value), color = "black", size = 3) +
+theme(
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.border = element_blank(),
+  panel.background = element_blank(),
+  axis.ticks = element_blank(),
+  legend.justification = "right",
+  legend.position = "right",
+  legend.direction = "vertical")+
+  guides(fill = guide_colorbar(barwidth = 1, barheight = 7,
+                title.position = "top", title.hjust = 0.5))
+```
+
+Como se puede observar, en el gráfico de la Figura \ref{fig:corr_plot_spearman}, no parecen existir relaciones entre variables numéricas desconocidas hasta el momento. Pero es importante comprobar las correlaciones de Spearman ya que puede darse el caso de que variables que no presentan una relación lineal entre si, sí presente una relación no lineal.
+
+#### Variables categóricas
+
+En el caso de las variables categóricas, hay diferentes formas de analizar la relación entre las variables. Se pueden estudiar variables a pares mediante la realización del test de chi-cuadrado. En otros casos, también es común el empleo de la V de Cramer, que consite en la raíz cuadrada del valor normalizado del test de chi-cuadrado. Como alternativa a estos estadísticos, se puede emplear la tau de Goodman y Kruskal.
+
+En el caso de los contrastes de hipótesis (chi-cuadrado o V de Cramer), sirven para evaluar la dependencia o independencia de variables categóricas. Mediante el uso de *assocstats* de la librería *vcd*, con la cual se obtiene el valor de la V de Cramer se ha tratado de analizar la realación entre la variable ESTUDIOS y LUGTRAB.
+
+```{r v_cramer, include=FALSE, eval=TRUE}
+library(vcd)
+tab <- table(df$ESTUDIOS, df$LUGTRAB)
+assocstats(tab)
+```
+Como se puede observar en los resultados obtenidos, el resulado de la V de Cramer para ese par de variables es 0.085. Teniendo una significancia de 0.05, se ha obtenido que 0.085 > 0.05, por lo tanto se aceptaria la hipótesis nula. Es decir, las variables son independientes (H0).
+
+
+En el caso de la tau de Goodman y Kruskal, el valor de tau es asimetético (hecho que no sucede con otros estadísticos como es la correlación) esto es debido a que dicho estadístico se basa en la fracción de variabilidad de la categoría y que puede ser explicada por la variable categórica x. Teniendo en cuenta lo anterior, se ha tratado de representar un mapa con este estadístico para las variables categóricas.
+
+```{r goodman_kruskal, echo = FALSE, include = TRUE, fig.width = 6, fig.height = 5, fig.align = "center", fig.cap = "Mapa de GoodManKruskal para las variables categóricas\\label{fig:goodman_kruskal}", fig.pos = "H"}
+library(GoodmanKruskal)
+
+df_cat <- df %>% select(TAM_MUNI, SEXO, EC, ESTUDIOS, CAMPO, SITLAB, LUGTRAB, HIJOS, COMPRAINT, TDOMEST)
+#head(df_cat)
+GKmat<-GKtauDataframe(df_cat)
+plot(GKmat)
+```
+Al ser un mapa asimétrico, la forma de interpretar los resultados de la Figura \ref{fig:goodman_kruskal} es un poco peculiar. Del resultado obenido podemos sacar las siguientes conclusiones:
+
++ El nivel de estudios de una persona es influyente en el campo de trabajo (0.4). En cambio, el campo de trabajo no es tan influyente en los estudios de una persona (0.22).
+
++ El estado civil de una persona es muy influyente en si tendrá o no hijos (0.56).
+
++ La situación laboral de una persona es influyente en su lugar de trabajo (0.48). En cambio, el lugar de trabajo de una persona, no es tán influyente en su situación laboral.
+
+La diagonal del mapa anterior, es decir los valores de K, aportan información acerca del número de valores distintos de cada factor.
 
 
 ### Resto de cosas hechas
