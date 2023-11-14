@@ -466,7 +466,29 @@ kable_styling(kable_res, font_size = 7, position = "left")
 
 # Exploración / visualización
 
-Una vez hemos asegurado que nuestros datos estén en la estructura de data.frame, tengan los valores correctamente etiquetados y estén almacenados con el tipo correcto, así como de conocer el origen de los NA, podemos empezar a buscar posibles patrones en las instancias o entre las características.
+Una vez hemos asegurado que nuestros datos estén en la estructura de data.frame, tengan los valores correctamente etiquetados y estén almacenados con el tipo correcto, así como de conocer el origen de los NA, podemos empezar a buscar posibles patrones en las instancias o entre las características. Una serie de preguntas surgen a nosotros en lo que es un *brainstorming* tras observar qué datos nos eran interesantes.
+
+- ¿Cómo estarán distribuidas las edades de nuestros encuestados? ¿Se seguirá el comportamiento de distribución normal?
+
+- ¿En qué situación laboral estarán nuestros adultos (más de 16 años) encuestados? ¿Serán la mayoría trabajadores a jornada completa?
+
+- ¿De qué manera estará el hecho de la edad que posee un encuestado con su número de hijos? ¿Habrá también una relación entre la edad y su satisfacción respecto al desplazamiento al trabajo/estudio?
+
+- ¿Existirá una diferencia relevante entre la satisfacción de desplazamiento y la provincia de la que es el encuestado? ¿Serán los lugareños de Madrid y Barcelona los más desquiciados en este aspecto?
+
+- ¿Será posible ver una distinción entre campos de estudio según el sexo del encuestado? ¿Será cierto que los hombres tienden a ir a ramas más relacionadas con la Arquitectura y Construcción, mientras que las mujeres más a aspectos sociosanitarios?
+
+- ¿Habrá una cierta tendencia a colaborar en las tareas domésticas o no según la situación laboral del encuestado? ¿Dependerá de haber tenido hijos?
+
+- ¿Qué variables numéricas de nuestro conjunto de datos tendrán cierta correlación, ya sea lineal o no lineal? 
+
+- ¿Qué concordancia existirán entre las variables categóricas de nuestro estudio? ¿Existirá entre el estado civil y tener o no hijos?
+
+- ¿Podremos ir más allá y tratar de implementar un algoritmo de clustering con el objetivo de detectar instancias atípicas en nuestro conjunto de datos?
+
+
+Todas estas preguntas se intentarán responder en el presente documento, mostrando representaciones gráficas o por métodos más estadísticos.
+
 
 ## Análisis univariante.
 
@@ -811,14 +833,11 @@ puntos_medios <- c(21, 31, 41, 51, 61, 71, 81, 91, 101, 111, 121)
 df_test <- df %>%
   mutate(grupo_edades = cut(EDAD, breaks = rangos_edades, labels = c("16-26", "27-36", "37-46", "47-56", "57-66", "67-76", "77-86", "87-96", "97-106", "107-116"), na.rm = TRUE)) %>%
   group_by(grupo_edades) %>%
-  summarise(MediaHijos = mean(NHIJOS, na.rm = TRUE), MediaSatisfaccion = mean(SATISTIEMP, na.rm = TRUE)) %>%
+  summarise(MediaHijos = round(mean(NHIJOS, na.rm = TRUE), 2), MediaSatisfaccion = round(mean(SATISTIEMP, na.rm = TRUE), 2)) %>%
   mutate(punto_medio = puntos_medios)
 
 df_test <- na.omit(df_test)
 head(df_test, 10)
-```
-```{comment, grupos_edad_comment}
-Es notable apreciar que la media de hijos se incrementa según avanzamos en la variable grupo_edades, como cabría esperar. La media de satisfacción por otra parte parece seguir una ascensión conforme se incrementa la edad. Sin embargo, en el intervalo de "77-86" hay una caída algo inesperada. 
 ```
 
 ```{r graf_dispersion, echo = FALSE, include = TRUE, fig.width = 5, fig.height = 3, fig.align = "center", fig.cap = "Diagrama de dispersión para representar la relación entre EDAD, NHIJOS y SATISTIEMP \\label{fig:graf_dispersion}", fig.pos = "H"}
@@ -846,6 +865,29 @@ knitr::include_graphics("./figure/graf_dispersion.png")
 ```
 
 Este gráfico corresponde a uno de dispersión con puntos "jittered" o dispersos, lo que resulta útil dada la enorme superposición de puntos presentes. La línea roja se ha hecho a partir de las medias en el número de hijos para los intervalos ("16-26", "27-36", "37-46", "47-56", "57-66", "67-76", "77-86", "87-96", "97-106", "107-116"), cogiendo el punto medio en cada caso. Es evidente notar que hay una tendencia creciente en que el número de hijos sea mayor conforme la edad es mayor. Esto es lo que uno esperaría, ya que antiguamente en España se solían tener mayor cantidad de hijos. Vemos además que los NA para la variable `SATISTIEMP` [color verde] está muy concentrada en edades avanzadas, resultado de que la mayoría de gente está jubilada. Los resultados en formato tabla no se muestran en el documento en aras de la brevedad, pero están disponibles en el *.Rmd*, al igual que muchas otras cosas.
+
+Los datos exactos se recogen en la Tabla \ref{tab:edad_hijos_satis}.
+
+```{r edad_hijo_sat}
+df_edad_hijos_satis <- df_test %>%
+  rename("Grupo edades" = grupo_edades) %>%
+  rename("Media de hijos" = MediaHijos) %>%
+  rename("Media de satisfacción" = MediaSatisfaccion) %>%
+  select(-punto_medio)
+```
+
+```{r edad_hijos_satis, fig.cap = "\\label{tab:edad_hijos_satis}", include = TRUE}
+kable_edad_hijos_satis <- knitr::kable(df_edad_hijos_satis, format = "latex",
+             booktabs = TRUE, 
+             caption = "Media de hijos de y de satisfacción de desplazamiento según el grupo de edades indicado.", 
+             align = 'ccc', centering = FALSE,
+             table.envir = "table", position = "H",
+             tabular.environment = "tabularx")
+
+kable_styling(kable_edad_hijos_satis, font_size = 8, position = "center", full_width = TRUE)
+```
+
+Es notable apreciar que la media de hijos se incrementa según avanzamos en el grupo de edades, como cabría esperar. La media de satisfacción por otra parte parece seguir una ascensión conforme se incrementa la edad. Sin embargo, en el intervalo de "77-86" se ve una caída. 
 
 
 #### Análisis entre variables numéricas y categóricas
@@ -1092,7 +1134,7 @@ if(resultado_chi_cuadrado$p.value < 0.05) {
 }
 ```
 $\\$
-En el caso de la tau de Goodman y Kruskal, el valor de tau es asimétrico (hecho que no sucede con otros estadísticos como es la correlación), debiéndose esto a que dicho estadístico se basa en la fracción de variabilidad de la categoría y que puede ser explicada por la variable categórica x. Teniendo en cuenta lo anterior, se ha tratado de representar un mapa con este estadístico para las variables categóricas.
+En el caso de la tau de Goodman y Kruskal \cite{goodman}, el valor de tau es asimétrico (hecho que no sucede con otros estadísticos como es la correlación), debiéndose esto a que dicho estadístico se basa en la fracción de variabilidad de la categoría y que puede ser explicada por la variable categórica x. Teniendo en cuenta lo anterior, se ha tratado de representar un mapa con este estadístico para las variables categóricas.
 
 ```{r goodman_kruskal, echo = FALSE, include = TRUE, fig.width = 5.8, fig.height = 5, fig.align = "center", fig.cap = "Mapa de GoodManKruskal para las variables categóricas\\label{fig:goodman_kruskal}", fig.pos = "H"}
 
@@ -1111,7 +1153,6 @@ Al ser un mapa asimétrico, la forma de interpretar los resultados de la Figura 
 + La situación laboral de una persona es algo influyente en su lugar de trabajo (0.48). En cambio, el lugar de trabajo de una persona, no es tan influyente en su situación laboral.
 
 La diagonal del mapa anterior, es decir los valores de K, aportan información acerca del número de valores distintos de cada factor.
-
 
 
 ## Búsqueda de outliers multivariante
@@ -1252,5 +1293,3 @@ kable_res <- knitr::kable(df_knitr, format = "latex",
 
 kable_styling(kable_res, font_size = 8)
 ```
-
-# Conclusiones
